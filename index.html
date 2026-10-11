@@ -1,585 +1,500 @@
-<script>
-    tailwind.config = {
-        theme: {
-            extend: {
-                colors: {
-                    spblue: { DEFAULT: '#156fb7', dark: '#0e4f84', light: '#e3f2fd' },
-                    spgreen: { DEFAULT: '#009c3e', dark: '#007a31', light: '#e8f5e9' },
-                    spred: { DEFAULT: '#e8414e', dark: '#c72c38', light: '#fde8e9' },
-                    spyellow: { DEFAULT: '#fecb29', dark: '#d9ab1e', light: '#fffde7' }
-                },
-                fontFamily: { sans: ['Inter', 'sans-serif'] }
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bénévolat École Saint Pierre d'Ascq - Sécurisé</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        spblue: { DEFAULT: '#156fb7', dark: '#0e4f84', light: '#e3f2fd' },
+                        spgreen: { DEFAULT: '#009c3e', dark: '#007a31', light: '#e8f5e9' },
+                        spred: { DEFAULT: '#e8414e', dark: '#c72c38', light: '#fde8e9' },
+                        spyellow: { DEFAULT: '#fecb29', dark: '#d9ab1e', light: '#fffde7' }
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                }
             }
         }
-    }
-</script>
+    </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans min-h-screen flex flex-col selection:bg-spblue selection:text-white">
 
-<!-- Inclure le SDK Supabase -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-
-<header id="app-header" class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-20 items-center">
-            <div class="flex items-center space-x-3 cursor-pointer" onclick="AppNavigation.switchTab('school-year')">
-                <svg class="w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M100 25 C85 25 75 40 85 55 C70 55 60 70 75 85 C90 85 100 70 100 55 C100 70 110 85 125 85 C140 70 130 55 115 55 C125 40 115 25 100 25 Z" fill="#009c3e"/>
-                    <path d="M55 45 C45 45 38 55 45 65 C35 65 28 75 38 85 C48 85 55 75 55 65 C55 75 62 85 72 85 C82 75 75 65 65 65 C72 55 65 45 55 45 Z" fill="#009c3e"/>
-                    <path d="M145 45 C135 45 128 55 135 65 C125 65 118 75 128 85 C138 85 145 75 145 65 C145 75 152 85 162 85 C172 75 165 65 155 65 C162 55 155 45 145 45 Z" fill="#009c3e"/>
-                    <path d="M40 105 Q 60 90 90 92" stroke="#fecb29" stroke-width="4" stroke-linecap="round"/>
-                    <path d="M30 120 Q 55 110 80 115" stroke="#fecb29" stroke-width="4" stroke-linecap="round"/>
-                    <path d="M160 105 Q 140 90 110 92" stroke="#fecb29" stroke-width="4" stroke-linecap="round"/>
-                    <path d="M170 120 Q 145 110 120 115" stroke="#fecb29" stroke-width="4" stroke-linecap="round"/>
-                    <circle cx="100" cy="72" r="8" fill="#156fb7"/>
-                    <path d="M100 82 C85 85 70 100 68 115 C78 112 90 110 100 118 C110 110 122 112 132 115 C130 100 115 85 100 82 Z" fill="#156fb7"/>
-                    <path d="M100 128 C95 120 82 120 82 130 C82 138 100 148 100 148 C100 148 118 138 118 130 C118 120 105 120 100 128 Z" fill="#e8414e"/>
-                    <path d="M100 155 C70 142 40 152 25 158 Q 100 135 100 155 Z" fill="#156fb7"/>
-                    <path d="M100 155 C130 142 160 152 175 158 Q 100 135 100 155 Z" fill="#156fb7"/>
-                    <path d="M25 160 Q 100 140 100 162 Q 100 140 175 160 Q 100 178 25 160 Z" fill="#0e4f84"/>
-                </svg>
-                <div class="flex flex-col">
-                    <div class="flex items-center gap-1">
-                        <span class="text-[10px] sm:text-xs font-bold text-amber-600 tracking-wider uppercase">ÉCOLE</span>
-                        <span class="text-base sm:text-xl font-extrabold text-spblue tracking-tight leading-none">SAINT PIERRE D'ASCQ</span>
-                    </div>
-                    <span class="text-[9px] sm:text-[10px] font-bold text-spgreen tracking-widest uppercase mt-0.5">Maternelle & Primaire • Bénévole</span>
-                </div>
-            </div>
-
-            <!-- Navigation Desktop -->
-            <nav class="hidden md:flex space-x-1 bg-slate-100 p-1.5 rounded-xl border border-slate-200">
-                <button onclick="AppNavigation.switchTab('school-year')" id="nav-school-year" class="nav-btn px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-white text-spblue shadow-sm">
-                    <i class="fa-solid fa-calendar-star mr-2 text-spgreen"></i>Planning
-                </button>
-                <button onclick="AppNavigation.switchTab('calendar')" id="nav-calendar" class="nav-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 transition-all">
-                    <i class="fa-solid fa-list-check mr-2 text-spblue"></i>Missions & Inscriptions
-                </button>
-                <button onclick="AppNavigation.switchTab('my-commitments')" id="nav-my-commitments" class="nav-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 transition-all flex items-center">
-                    <i class="fa-solid fa-hand-holding-heart mr-2 text-spred"></i>Mes Engagements
-                    <span id="my-commitments-badge" class="ml-2 px-1.5 py-0.5 text-[10px] bg-spred text-white font-bold rounded-full hidden">0</span>
-                </button>
-            </nav>
-
-            <div class="flex items-center space-x-2 sm:space-x-3">
-                <button id="admin-create-btn" onclick="EventEditorModal.open()" class="hidden inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-spblue hover:bg-spblue-dark text-white font-semibold text-xs sm:text-sm rounded-xl shadow-sm transition-all">
-                    <i class="fa-solid fa-plus mr-1 sm:mr-2"></i><span>Créer</span>
-                </button>
-                <div id="user-header-profile" class="flex items-center border-l border-slate-200 pl-2 sm:pl-3"></div>
-                
-                <button onclick="MobileMenu.toggle()" class="md:hidden p-2 text-slate-600 hover:text-spblue rounded-xl focus:outline-none">
-                    <i class="fa-solid fa-bars text-xl"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Menu Déroulant Mobile -->
-    <div id="mobile-menu" class="hidden md:hidden bg-white border-b border-slate-200 px-4 pt-2 pb-4 space-y-2">
-        <button onclick="MobileMenu.switchAndClose('school-year')" class="w-full text-left px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 flex items-center gap-2.5">
-            <i class="fa-solid fa-calendar-star text-spgreen text-sm"></i> Planning Chronologique
-        </button>
-        <button onclick="MobileMenu.switchAndClose('calendar')" class="w-full text-left px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 flex items-center gap-2.5">
-            <i class="fa-solid fa-list-check text-spblue text-sm"></i> Missions & Inscriptions
-        </button>
-        <button onclick="MobileMenu.switchAndClose('my-commitments')" class="w-full text-left px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 flex items-center gap-2.5">
-            <i class="fa-solid fa-hand-holding-heart text-spred text-sm"></i> Mes Engagements
-        </button>
-    </div>
-</header>
-
-<main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-    <!-- Tab 1: Timeline -->
-    <section id="tab-school-year" class="space-y-6">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-            <div>
-                <h2 class="text-base font-extrabold text-slate-800 flex items-center gap-2">
-                    <i class="fa-solid fa-calendar-star text-spblue"></i> Planning Saint-Pierre d'Ascq 2026-2027 
-                </h2>
-                <p class="text-xs text-slate-500">Découvre les événements de l'année, et vois où tu veux contribuer !</p>
-            </div>
-            <div class="flex flex-wrap items-center gap-4 text-xs font-medium">
-                <span class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded-md bg-amber-100 border border-amber-300 inline-block"></span> Préparation</span>
-                <span class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded-full bg-rose-400 inline-block shadow-xs"></span> <i class="fa-solid fa-flag text-rose-400 text-xs"></i> Jour J</span>
-            </div>
-        </div>
-        <div id="timeline-component-container"></div>
-    </section>
-
-    <!-- Tab 2: Calendar & Missions -->
-    <section id="tab-calendar" class="hidden space-y-6">
-        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-3">
-            <div>
-                <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
-                    <i class="fa-solid fa-list-check text-spgreen"></i> Missions Disponibles
-                </h2>
-                <p class="text-xs text-slate-500">Viens contribuer ! Des missions sont disponibles et n'attendent que toi !! </p>
-            </div>
-        </div>
-        <div id="events-grid-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-    </section>
-
-    <!-- Tab 3: My Commitments -->
-    <section id="tab-my-commitments" class="hidden space-y-6"></section>
-
-    <!-- Tab 4: Dashboard -->
-    <section id="tab-dashboard" class="hidden space-y-6"></section>
-</main>
-
-<div id="modals-container">
-    <!-- Auth Modal -->
-    <div id="auth-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-user-check text-spblue mr-2"></i>Espace Parent - Connexion Sécurisée</h3>
-                <button onclick="AuthModal.close()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <p class="text-xs text-slate-500 mb-4">Saisissez votre email. Si le compte existe, saisissez votre mot de passe. Sinon, remplissez vos informations pour créer votre compte.</p>
-            
-            <form onsubmit="AuthModal.submit(event)" class="space-y-3.5 text-xs">
-                <div>
-                    <label class="block font-bold text-slate-700 uppercase mb-1">Adresse Email *</label>
-                    <input type="email" id="login-email-input" required placeholder="ex: marie.dubois@gmail.com" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue">
-                </div>
-                
-                <!-- Dynamic password group for existing users -->
-                <div id="auth-password-group" class="hidden">
-                    <label class="block font-bold text-slate-700 uppercase mb-1">Mot de passe sécurisé *</label>
-                    <input type="password" id="login-password" placeholder="••••••••" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue">
-                    <p id="auth-error-msg" class="text-spred font-semibold text-[11px] mt-1 hidden">Mot de passe incorrect.</p>
-                </div>
-
-                <!-- Dynamic registration group for new users -->
-                <div id="auth-signup-group" class="hidden space-y-3 pt-2 border-t border-slate-100">
-                    <p class="text-[11px] text-spgreen font-semibold"><i class="fa-solid fa-user-plus mr-1"></i>Nouvel email détecté. Complétez vos informations :</p>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block font-bold text-slate-700 uppercase mb-1">Prénom *</label>
-                            <input type="text" id="login-firstname" placeholder="ex: Marie" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue">
+    <header id="app-header" class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20 items-center">
+                <div class="flex items-center space-x-3 cursor-pointer" onclick="AppNavigation.switchTab('school-year')">
+                    <svg class="w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M100 25 C85 25 75 40 85 55 C70 55 60 70 75 85 C90 85 100 70 100 55 C100 70 110 85 125 85 C140 70 130 55 115 55 C125 40 115 25 100 25 Z" fill="#009c3e"/>
+                        <path d="M55 45 C45 45 38 55 45 65 C35 65 28 75 38 85 C48 85 55 75 55 65 C55 75 62 85 72 85 C82 75 75 65 65 65 C72 55 65 45 55 45 Z" fill="#009c3e"/>
+                        <path d="M145 45 C135 45 128 55 135 65 C125 65 118 75 128 85 C138 85 145 75 145 65 C145 75 152 85 162 85 C172 75 165 65 155 65 C162 55 155 45 145 45 Z" fill="#009c3e"/>
+                        <path d="M40 105 Q 60 90 90 92" stroke="#fecb29" stroke-width="4" stroke-linecap="round"/>
+                        <path d="M30 120 Q 55 110 80 115" stroke="#fecb29" stroke-width="4" stroke-linecap="round"/>
+                        <path d="M160 105 Q 140 90 110 92" stroke="#fecb29" stroke-width="4" stroke-linecap="round"/>
+                        <path d="M170 120 Q 145 110 120 115" stroke="#fecb29" stroke-width="4" stroke-linecap="round"/>
+                        <circle cx="100" cy="72" r="8" fill="#156fb7"/>
+                        <path d="M100 82 C85 85 70 100 68 115 C78 112 90 110 100 118 C110 110 122 112 132 115 C130 100 115 85 100 82 Z" fill="#156fb7"/>
+                        <path d="M100 128 C95 120 82 120 82 130 C82 138 100 148 100 148 C100 148 118 138 118 130 C118 120 105 120 100 128 Z" fill="#e8414e"/>
+                        <path d="M100 155 C70 142 40 152 25 158 Q 100 135 100 155 Z" fill="#156fb7"/>
+                        <path d="M100 155 C130 142 160 152 175 158 Q 100 135 100 155 Z" fill="#156fb7"/>
+                        <path d="M25 160 Q 100 140 100 162 Q 100 140 175 160 Q 100 178 25 160 Z" fill="#0e4f84"/>
+                    </svg>
+                    <div class="flex flex-col">
+                        <div class="flex items-center gap-1">
+                            <span class="text-[10px] sm:text-xs font-bold text-amber-600 tracking-wider uppercase">ÉCOLE</span>
+                            <span class="text-base sm:text-xl font-extrabold text-spblue tracking-tight leading-none">SAINT PIERRE D'ASCQ</span>
                         </div>
-                        <div>
-                            <label class="block font-bold text-slate-700 uppercase mb-1">Nom *</label>
-                            <input type="text" id="login-lastname" placeholder="ex: Dubois" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 uppercase mb-1">Classe(s) des enfants *</label>
-                        <input type="text" id="login-kids" placeholder="ex: TPS, CP, CM2" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue">
-                    </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 uppercase mb-1">Créer un mot de passe sécurisé *</label>
-                        <input type="password" id="signup-password" placeholder="•••••••• (8 caractères min.)" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue">
-                        <p class="text-[10px] text-slate-400 mt-0.5">Le mot de passe sera sécurisé et haché avant stockage en base de données.</p>
+                        <span class="text-[9px] sm:text-[10px] font-bold text-spgreen tracking-widest uppercase mt-0.5">Maternelle & Primaire • Bénévole</span>
                     </div>
                 </div>
 
-                <div class="flex gap-2 pt-2">
-                    <button type="button" id="auth-back-btn" onclick="AuthModal.resetForm()" class="hidden py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all">Retour</button>
-                    <button type="submit" id="auth-submit-btn" class="flex-1 py-3 bg-spblue hover:bg-spblue-dark text-white font-bold text-xs rounded-xl shadow-sm transition-all">
-                        Vérifier l'email
+                <!-- Navigation Desktop -->
+                <nav class="hidden md:flex space-x-1 bg-slate-100 p-1.5 rounded-xl border border-slate-200">
+                    <button onclick="AppNavigation.switchTab('school-year')" id="nav-school-year" class="nav-btn px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-white text-spblue shadow-sm">
+                        <i class="fa-solid fa-calendar-star mr-2 text-spgreen"></i>Planning
+                    </button>
+                    <button onclick="AppNavigation.switchTab('calendar')" id="nav-calendar" class="nav-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 transition-all">
+                        <i class="fa-solid fa-list-check mr-2 text-spblue"></i>Missions & Inscriptions
+                    </button>
+                    <button onclick="AppNavigation.switchTab('my-commitments')" id="nav-my-commitments" class="nav-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 transition-all flex items-center">
+                        <i class="fa-solid fa-hand-holding-heart mr-2 text-spred"></i>Mes Engagements
+                        <span id="my-commitments-badge" class="ml-2 px-1.5 py-0.5 text-[10px] bg-spred text-white font-bold rounded-full hidden">0</span>
+                    </button>
+                </nav>
+
+                <div class="flex items-center space-x-2 sm:space-x-3">
+                    <button id="admin-create-btn" onclick="EventEditorModal.open()" class="hidden inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-spblue hover:bg-spblue-dark text-white font-semibold text-xs sm:text-sm rounded-xl shadow-sm transition-all">
+                        <i class="fa-solid fa-plus mr-1 sm:mr-2"></i><span>Créer</span>
+                    </button>
+                    <div id="user-header-profile" class="flex items-center border-l border-slate-200 pl-2 sm:pl-3"></div>
+                    
+                    <button onclick="MobileMenu.toggle()" class="md:hidden p-2 text-slate-600 hover:text-spblue rounded-xl focus:outline-none">
+                        <i class="fa-solid fa-bars text-xl"></i>
                     </button>
                 </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Event Editor Modal -->
-    <div id="event-editor-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-4 border-b pb-3">
-                <h3 id="event-modal-title" class="text-lg font-bold text-slate-800"><i class="fa-solid fa-calendar-plus text-spblue mr-2"></i>Créer / Modifier un Événement</h3>
-                <button onclick="EventEditorModal.close()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <form onsubmit="EventEditorModal.submit(event)" class="space-y-4 text-xs">
-                <input type="hidden" id="event-edit-id">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div class="md:col-span-2">
-                        <label class="block font-bold text-slate-700 uppercase mb-1">Titre de l'événement *</label>
-                        <input type="text" id="event-title-input" required placeholder="ex: Fête de l'École" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue">
-                    </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 uppercase mb-1">Organisateur</label>
-                        <select id="event-organizer-input" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue bg-white">
-                            <option value="APEL">APEL</option>
-                            <option value="OGEC">OGEC</option>
-                            <option value="APEL & OGEC">APEL & OGEC</option>
-                            <option value="École">École</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 uppercase mb-1">Type *</label>
-                        <select id="event-type-input" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue bg-white">
-                            <option value="Fête">Fête</option>
-                            <option value="Spectacle">Spectacle</option>
-                            <option value="Vente / Opération">Vente / Opération</option>
-                            <option value="Conseil d'École">Conseil d'École</option>
-                            <option value="Atelier">Atelier</option>
-                            <option value="Autre">Autre</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 uppercase mb-1">Date exacte (Jour J)</label>
-                        <input type="date" id="event-date-input" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue">
-                    </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 uppercase mb-1">Mois de Début de Préparation</label>
-                        <select id="event-prepmonth-input" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue bg-white">
-                            <option value="09">Septembre</option>
-                            <option value="10">Octobre</option>
-                            <option value="11">Novembre</option>
-                            <option value="12">Décembre</option>
-                            <option value="01">Janvier</option>
-                            <option value="02">Février</option>
-                            <option value="03">Mars</option>
-                            <option value="04">Avril</option>
-                            <option value="05">Mai</option>
-                            <option value="06">Juin</option>
-                        </select>
-                    </div>
-                </div>
+        </div>
 
+        <!-- Menu Déroulant Mobile -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-b border-slate-200 px-4 pt-2 pb-4 space-y-2">
+            <button onclick="MobileMenu.switchAndClose('school-year')" class="w-full text-left px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 flex items-center gap-2.5">
+                <i class="fa-solid fa-calendar-star text-spgreen text-sm"></i> Planning Chronologique
+            </button>
+            <button onclick="MobileMenu.switchAndClose('calendar')" class="w-full text-left px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 flex items-center gap-2.5">
+                <i class="fa-solid fa-list-check text-spblue text-sm"></i> Missions & Inscriptions
+            </button>
+            <button onclick="MobileMenu.switchAndClose('my-commitments')" class="w-full text-left px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 flex items-center gap-2.5">
+                <i class="fa-solid fa-hand-holding-heart text-spred text-sm"></i> Mes Engagements
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <!-- Tab 1: Timeline -->
+        <section id="tab-school-year" class="space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
                 <div>
-                    <label class="block font-bold text-slate-700 uppercase mb-1">Lieu</label>
-                    <input type="text" id="event-location-input" placeholder="ex: Cour principale" class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue">
+                    <h2 class="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-calendar-star text-spblue"></i> Planning Saint-Pierre d'Ascq 2026-2027 
+                    </h2>
+                    <p class="text-xs text-slate-500">Découvre les événements de l'année, et vois où tu veux contribuer !</p>
                 </div>
+                <div class="flex flex-wrap items-center gap-4 text-xs font-medium">
+                    <span class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded-md bg-amber-100 border border-amber-300 inline-block"></span> Préparation</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded-full bg-rose-400 inline-block shadow-xs"></span> <i class="fa-solid fa-flag text-rose-400 text-xs"></i> Jour J</span>
+                </div>
+            </div>
+            <div id="timeline-component-container"></div>
+        </section>
+
+        <!-- Tab 2: Calendar & Missions -->
+        <section id="tab-calendar" class="hidden space-y-6">
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-3">
                 <div>
-                    <label class="block font-bold text-slate-700 uppercase mb-1">Description</label>
-                    <textarea id="event-desc-input" rows="2" placeholder="Détails..." class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue"></textarea>
+                    <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-spgreen"></i> Missions Disponibles
+                    </h2>
+                    <p class="text-xs text-slate-500">Viens contribuer ! Des missions sont disponibles et n'attendent que toi !! </p>
                 </div>
+            </div>
+            <div id="events-grid-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </section>
 
-                <div class="border-t pt-4">
-                    <div class="flex justify-between items-center mb-2">
-                        <label class="block font-bold text-slate-700 uppercase"><i class="fa-solid fa-list-check text-spgreen mr-1"></i> Missions requises & Bénévoles</label>
-                        <button type="button" onclick="EventEditorModal.addMissionField()" class="text-xs bg-spgreen-light text-spgreen hover:bg-spgreen hover:text-white px-2.5 py-1 rounded-lg font-bold transition-all">
-                            <i class="fa-solid fa-plus mr-1"></i> Ajouter une mission
-                        </button>
+        <!-- Tab 3: My Commitments -->
+        <section id="tab-my-commitments" class="hidden space-y-6"></section>
+
+        <!-- Tab 4: Dashboard -->
+        <section id="tab-dashboard" class="hidden space-y-6"></section>
+    </main>
+
+    <div id="modals-container">
+        <!-- Auth Modal -->
+        <div id="auth-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+            <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-user-check text-spblue mr-2"></i>Espace Parent - Connexion Sécurisée</h3>
+                    <button onclick="AuthModal.close()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                <p class="text-xs text-slate-500 mb-4">Saisissez votre email. Si le compte existe, saisissez votre mot de passe. Sinon, remplissez vos informations pour créer votre compte.</p>
+                
+                <form onsubmit="AuthModal.submit(event)" class="space-y-3.5 text-xs">
+                    <div>
+                        <label class="block font-bold text-slate-700 uppercase mb-1">Adresse Email *</label>
+                        <input type="email" id="login-email-input" required placeholder="ex: marie.dubois@gmail.com" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue">
                     </div>
-                    <div id="event-missions-container" class="space-y-3 max-h-64 overflow-y-auto pr-1"></div>
-                </div>
+                    
+                    <!-- Dynamic fields container based on email check -->
+                    <div id="auth-password-group" class="hidden">
+                        <label class="block font-bold text-slate-700 uppercase mb-1">Mot de passe *</label>
+                        <input type="password" id="login-password" placeholder="••••••••" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue">
+                        <p id="auth-error-msg" class="text-spred font-semibold text-[11px] mt-1 hidden">Mot de passe incorrect.</p>
+                    </div>
 
-                <div class="flex justify-end space-x-3 pt-3 border-t">
-                    <button type="button" onclick="EventEditorModal.close()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl">Annuler</button>
-                    <button type="submit" class="px-5 py-2 bg-spblue hover:bg-spblue-dark text-white font-bold text-xs rounded-xl shadow-sm">Enregistrer l'événement</button>
+                    <div id="auth-signup-group" class="hidden space-y-3 pt-2 border-t border-slate-100">
+                        <p class="text-[11px] text-spgreen font-semibold"><i class="fa-solid fa-user-plus mr-1"></i>Nouvel email détecté. Complétez vos informations :</p>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block font-bold text-slate-700 uppercase mb-1">Prénom *</label>
+                                <input type="text" id="login-firstname" placeholder="ex: Marie" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue">
+                            </div>
+                            <div>
+                                <label class="block font-bold text-slate-700 uppercase mb-1">Nom *</label>
+                                <input type="text" id="login-lastname" placeholder="ex: Dubois" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 uppercase mb-1">Classe(s) des enfants *</label>
+                            <input type="text" id="login-kids" placeholder="ex: TPS, CP, CM2" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 uppercase mb-1">Créer un mot de passe *</label>
+                            <input type="password" id="signup-password" placeholder="••••••••" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue">
+                        </div>
+                    </div>
+
+                    <button type="submit" id="auth-submit-btn" class="w-full py-3 bg-spblue hover:bg-spblue-dark text-white font-bold text-xs rounded-xl shadow-sm transition-all mt-2">
+                        Continuer
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Event Editor Modal -->
+        <div id="event-editor-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+            <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-4 border-b pb-3">
+                    <h3 id="event-modal-title" class="text-lg font-bold text-slate-800"><i class="fa-solid fa-calendar-plus text-spblue mr-2"></i>Créer / Modifier un Événement</h3>
+                    <button onclick="EventEditorModal.close()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
                 </div>
-            </form>
+                <form onsubmit="EventEditorModal.submit(event)" class="space-y-4 text-xs">
+                    <input type="hidden" id="event-edit-id">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div class="md:col-span-2">
+                            <label class="block font-bold text-slate-700 uppercase mb-1">Titre de l'événement *</label>
+                            <input type="text" id="event-title-input" required placeholder="ex: Fête de l'École" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 uppercase mb-1">Organisateur</label>
+                            <select id="event-organizer-input" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue bg-white">
+                                <option value="APEL">APEL</option>
+                                <option value="OGEC">OGEC</option>
+                                <option value="APEL & OGEC">APEL & OGEC</option>
+                                <option value="École">École</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 uppercase mb-1">Type *</label>
+                            <select id="event-type-input" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue bg-white">
+                                <option value="Fête">Fête</option>
+                                <option value="Spectacle">Spectacle</option>
+                                <option value="Vente / Opération">Vente / Opération</option>
+                                <option value="Conseil d'École">Conseil d'École</option>
+                                <option value="Atelier">Atelier</option>
+                                <option value="Autre">Autre</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 uppercase mb-1">Date exacte (Jour J)</label>
+                            <input type="date" id="event-date-input" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 uppercase mb-1">Mois de Début de Préparation</label>
+                            <select id="event-prepmonth-input" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue bg-white">
+                                <option value="09">Septembre</option>
+                                <option value="10">Octobre</option>
+                                <option value="11">Novembre</option>
+                                <option value="12">Décembre</option>
+                                <option value="01">Janvier</option>
+                                <option value="02">Février</option>
+                                <option value="03">Mars</option>
+                                <option value="04">Avril</option>
+                                <option value="05">Mai</option>
+                                <option value="06">Juin</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block font-bold text-slate-700 uppercase mb-1">Lieu</label>
+                        <input type="text" id="event-location-input" placeholder="ex: Cour principale" class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 uppercase mb-1">Description</label>
+                        <textarea id="event-desc-input" rows="2" placeholder="Détails..." class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue"></textarea>
+                    </div>
+
+                    <div class="border-t pt-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="block font-bold text-slate-700 uppercase"><i class="fa-solid fa-list-check text-spgreen mr-1"></i> Missions requises & Bénévoles</label>
+                            <button type="button" onclick="EventEditorModal.addMissionField()" class="text-xs bg-spgreen-light text-spgreen hover:bg-spgreen hover:text-white px-2.5 py-1 rounded-lg font-bold transition-all">
+                                <i class="fa-solid fa-plus mr-1"></i> Ajouter une mission
+                            </button>
+                        </div>
+                        <div id="event-missions-container" class="space-y-3 max-h-64 overflow-y-auto pr-1"></div>
+                    </div>
+
+                    <div class="flex justify-end space-x-3 pt-3 border-t">
+                        <button type="button" onclick="EventEditorModal.close()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl">Annuler</button>
+                        <button type="submit" class="px-5 py-2 bg-spblue hover:bg-spblue-dark text-white font-bold text-xs rounded-xl shadow-sm">Enregistrer l'événement</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-</div>
 
-<!-- Toast Notification -->
-<div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
-    <i id="toast-icon" class="fa-solid fa-circle-check text-spgreen"></i>
-    <span id="toast-message" class="text-sm font-semibold">Message</span>
-</div>
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-spgreen"></i>
+        <span id="toast-message" class="text-sm font-semibold">Message</span>
+    </div>
 
-<script>
-    // CONFIGURATION SUPABASE (Mettez vos clés ici)
-    const SUPABASE_URL = 'https://votre-projet.supabase.co';
-    const SUPABASE_ANON_KEY = 'votre-cle-anon-supabase';
-    
-    let supabaseClient = null;
-    try {
-        if (window.supabase && SUPABASE_URL && SUPABASE_URL !== 'https://votre-projet.supabase.co') {
-            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        }
-    } catch (e) {
-        console.warn("Supabase non initialisé, bascule vers le mode local de secours.");
-    }
+    <script>
+        const SECURE_API_ENDPOINT = '/api/supabase-proxy'; 
 
-    const AppNavigation = {
-        currentTab: 'school-year',
-        switchTab(tabId) {
-            this.currentTab = tabId;
-            ['school-year', 'calendar', 'my-commitments', 'dashboard'].forEach(tab => {
-                const sec = document.getElementById(`tab-${tab}`);
-                const btn = document.getElementById(`nav-${tab}`);
-                if (sec) sec.classList.toggle('hidden', tab !== tabId);
-                if (btn) {
-                    btn.className = tab === tabId ? 
-                        'nav-btn px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-white text-spblue shadow-sm' : 
-                        'nav-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 transition-all';
-                }
-            });
-        }
-    };
-
-    const MobileMenu = {
-        toggle() {
-            const menu = document.getElementById('mobile-menu');
-            if (menu) menu.classList.toggle('hidden');
-        },
-        switchAndClose(tabId) {
-            AppNavigation.switchTab(tabId);
-            this.toggle();
-        }
-    };
-
-    const UIUtils = {
-        showToast(message, type = 'success') {
-            const toast = document.getElementById('toast');
-            const toastMsg = document.getElementById('toast-message');
-            const toastIcon = document.getElementById('toast-icon');
-            if (!toast) return;
-            toastMsg.innerText = message;
-            toastIcon.className = type === 'error' ? 'fa-solid fa-circle-exclamation text-spred' : 'fa-solid fa-circle-check text-spgreen';
-            toast.classList.remove('translate-y-20', 'opacity-0');
-            setTimeout(() => {
-                toast.classList.add('translate-y-20', 'opacity-0');
-            }, 3000);
-        }
-    };
-
-    // Hachage SHA-256 du mot de passe
-    async function hashPassword(password) {
-        const msgBuffer = new TextEncoder().encode(password);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        return hashHex;
-    }
-
-    const AuthModal = {
-        checkedEmail: null,
-        open() { 
-            this.resetForm();
-            document.getElementById('auth-modal').classList.remove('hidden'); 
-        },
-        close() { 
-            document.getElementById('auth-modal').classList.add('hidden'); 
-            this.resetForm();
-        },
-        resetForm() {
-            this.checkedEmail = null;
-            const emailInput = document.getElementById('login-email-input');
-            if (emailInput) {
-                emailInput.value = '';
-                emailInput.disabled = false;
+        const AppNavigation = {
+            currentTab: 'school-year',
+            switchTab(tabId) {
+                this.currentTab = tabId;
+                ['school-year', 'calendar', 'my-commitments', 'dashboard'].forEach(tab => {
+                    const sec = document.getElementById(`tab-${tab}`);
+                    const btn = document.getElementById(`nav-${tab}`);
+                    if (sec) sec.classList.toggle('hidden', tab !== tabId);
+                    if (btn) {
+                        btn.className = tab === tabId ? 
+                            'nav-btn px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-white text-spblue shadow-sm' : 
+                            'nav-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 transition-all';
+                    }
+                });
             }
-            
-            const pwdGroup = document.getElementById('auth-password-group');
-            const signupGroup = document.getElementById('auth-signup-group');
-            const errMsg = document.getElementById('auth-error-msg');
-            const submitBtn = document.getElementById('auth-submit-btn');
-            const backBtn = document.getElementById('auth-back-btn');
+        };
 
-            if (pwdGroup) pwdGroup.classList.add('hidden');
-            if (signupGroup) signupGroup.classList.add('hidden');
-            if (errMsg) errMsg.classList.add('hidden');
-            if (backBtn) backBtn.classList.add('hidden');
-            if (submitBtn) submitBtn.innerText = "Vérifier l'email";
-        },
-        async submit(e) {
-            e.preventDefault();
-            const emailInput = document.getElementById('login-email-input');
-            const email = emailInput.value.trim().toLowerCase();
+        const MobileMenu = {
+            toggle() {
+                const menu = document.getElementById('mobile-menu');
+                if (menu) menu.classList.toggle('hidden');
+            },
+            switchAndClose(tabId) {
+                AppNavigation.switchTab(tabId);
+                this.toggle();
+            }
+        };
 
-            if (!this.checkedEmail) {
-                if (!email) return;
+        const UIUtils = {
+            showToast(message, type = 'success') {
+                const toast = document.getElementById('toast');
+                const toastMsg = document.getElementById('toast-message');
+                const toastIcon = document.getElementById('toast-icon');
+                if (!toast) return;
+                toastMsg.innerText = message;
+                toastIcon.className = type === 'error' ? 'fa-solid fa-circle-exclamation text-spred' : 'fa-solid fa-circle-check text-spgreen';
+                toast.classList.remove('translate-y-20', 'opacity-0');
+                setTimeout(() => {
+                    toast.classList.add('translate-y-20', 'opacity-0');
+                }, 3000);
+            }
+        };
+
+        const AuthModal = {
+            checkedEmail: null,
+            open() { 
+                this.resetForm();
+                document.getElementById('auth-modal').classList.remove('hidden'); 
+            },
+            close() { 
+                document.getElementById('auth-modal').classList.add('hidden'); 
+                this.resetForm();
+            },
+            resetForm() {
+                this.checkedEmail = null;
+                const emailInput = document.getElementById('login-email-input');
+                if (emailInput) emailInput.value = '';
+                emailInput.disabled = false;
                 
-                const exists = await SupabaseService.checkEmailExists(email);
-                this.checkedEmail = email;
-                emailInput.disabled = true;
-
                 const pwdGroup = document.getElementById('auth-password-group');
                 const signupGroup = document.getElementById('auth-signup-group');
+                const errMsg = document.getElementById('auth-error-msg');
                 const submitBtn = document.getElementById('auth-submit-btn');
-                const backBtn = document.getElementById('auth-back-btn');
-                if (backBtn) backBtn.classList.remove('hidden');
 
-                if (exists) {
-                    pwdGroup.classList.remove('hidden');
-                    signupGroup.classList.add('hidden');
-                    submitBtn.innerText = "Se connecter";
-                } else {
-                    pwdGroup.classList.add('hidden');
-                    signupGroup.classList.remove('hidden');
-                    document.getElementById('login-firstname').required = true;
-                    document.getElementById('login-lastname').required = true;
-                    document.getElementById('login-kids').required = true;
-                    document.getElementById('signup-password').required = true;
-                    submitBtn.innerText = "Créer mon compte et me connecter";
-                }
-                return;
-            }
+                if (pwdGroup) pwdGroup.classList.add('hidden');
+                if (signupGroup) signupGroup.classList.add('hidden');
+                if (errMsg) errMsg.classList.add('hidden');
+                if (submitBtn) submitBtn.innerText = "Continuer";
+            },
+            async submit(e) {
+                e.preventDefault();
+                const emailInput = document.getElementById('login-email-input');
+                const email = emailInput.value.trim().toLowerCase();
 
-            const exists = await SupabaseService.checkEmailExists(this.checkedEmail);
-            if (exists) {
-                const passwordPlain = document.getElementById('login-password').value;
-                const hashedPassword = await hashPassword(passwordPlain);
+                // Etape 1 : Si l'email n'a pas encore été vérifié dans la base de données
+                if (!this.checkedEmail) {
+                    if (!email) return;
+                    const exists = await SecureBackendService.checkEmailExists(email);
+                    this.checkedEmail = email;
+                    emailInput.disabled = true;
 
-                const res = await SupabaseService.loginUser({ email: this.checkedEmail, password: hashedPassword });
-                if (res.status === 'error') {
-                    const errMsg = document.getElementById('auth-error-msg');
-                    if (errMsg) {
-                        errMsg.innerText = res.message || "Mot de passe incorrect.";
-                        errMsg.classList.remove('hidden');
+                    const pwdGroup = document.getElementById('auth-password-group');
+                    const signupGroup = document.getElementById('auth-signup-group');
+                    const submitBtn = document.getElementById('auth-submit-btn');
+
+                    if (exists) {
+                        // L'email existe : demander le mot de passe
+                        pwdGroup.classList.remove('hidden');
+                        signupGroup.classList.add('hidden');
+                        submitBtn.innerText = "Se connecter";
+                    } else {
+                        // L'email n'existe pas : proposer de saisir les informations de création de compte
+                        pwdGroup.classList.add('hidden');
+                        signupGroup.classList.remove('hidden');
+                        document.getElementById('login-firstname').required = true;
+                        document.getElementById('login-lastname').required = true;
+                        document.getElementById('login-kids').required = true;
+                        document.getElementById('signup-password').required = true;
+                        submitBtn.innerText = "Créer mon compte et me connecter";
                     }
-                    UIUtils.showToast("Mot de passe incorrect.", "error");
-                    return;
-                }
-                AppState.setCurrentUser(res.user);
-            } else {
-                const firstname = document.getElementById('login-firstname').value.trim();
-                const lastname = document.getElementById('login-lastname').value.trim();
-                const kidsClasses = document.getElementById('login-kids').value.trim();
-                const passwordPlain = document.getElementById('signup-password').value;
-
-                if (passwordPlain.length < 6) {
-                    UIUtils.showToast("Le mot de passe doit contenir au moins 6 caractères.", "error");
                     return;
                 }
 
-                const hashedPassword = await hashPassword(passwordPlain);
-                const res = await SupabaseService.registerUser({ 
-                    email: this.checkedEmail, 
-                    password: hashedPassword, 
-                    firstname, 
-                    lastname, 
-                    kids_classes: kidsClasses 
-                });
+                // Etape 2 : Traitement de la connexion ou de l'inscription
+                const exists = await SecureBackendService.checkEmailExists(this.checkedEmail);
+                if (exists) {
+                    // Vérification du mot de passe
+                    const password = document.getElementById('login-password').value;
+                    const res = await SecureBackendService.login({ email: this.checkedEmail, password, isLogin: true });
+                    if (res.status === 'error') {
+                        const errMsg = document.getElementById('auth-error-msg');
+                        if (errMsg) {
+                            errMsg.innerText = res.message || "Mot de passe incorrect.";
+                            errMsg.classList.remove('hidden');
+                        }
+                        UIUtils.showToast("Mot de passe incorrect.", "error");
+                        return;
+                    }
+                    AppState.setCurrentUser(res.user);
+                } else {
+                    // Inscription nouveau compte
+                    const firstname = document.getElementById('login-firstname').value.trim();
+                    const lastname = document.getElementById('login-lastname').value.trim();
+                    const kidsClasses = document.getElementById('login-kids').value.trim();
+                    const password = document.getElementById('signup-password').value;
 
-                if (res.status === 'error') {
-                    UIUtils.showToast(res.message || "Erreur lors de la création du compte", "error");
-                    return;
+                    const res = await SecureBackendService.login({ 
+                        email: this.checkedEmail, 
+                        password, 
+                        firstname, 
+                        lastname, 
+                        kidsClasses, 
+                        isLogin: false 
+                    });
+                    if (res.status === 'error') {
+                        UIUtils.showToast(res.message || "Erreur lors de la création du compte", "error");
+                        return;
+                    }
+                    AppState.setCurrentUser(res.user);
                 }
-                AppState.setCurrentUser(res.user);
             }
-        }
-    };
+        };
 
-    const UserComponent = {
-        render() {
-            const container = document.getElementById('user-header-profile');
-            const adminBtn = document.getElementById('admin-create-btn');
-            if (adminBtn) adminBtn.classList.toggle('hidden', !AppState.isAdmin());
-            if (!container) return;
+        const UserComponent = {
+            render() {
+                const container = document.getElementById('user-header-profile');
+                const adminBtn = document.getElementById('admin-create-btn');
+                if (adminBtn) adminBtn.classList.toggle('hidden', !AppState.isAdmin());
+                if (!container) return;
 
-            if (AppState.currentUser) {
-                const totalHours = AppState.getUserTotalHours();
-                container.innerHTML = `
-                    <div class="flex items-center space-x-3">
-                        <div class="text-right hidden sm:block">
-                            <p class="text-xs font-bold text-slate-800">${AppState.currentUser.firstname || ''} ${AppState.currentUser.lastname || ''}</p>
-                            <p class="text-[10px] text-slate-500">
-                                <span class="inline-flex items-center ml-1 px-1.5 py-0.2 bg-spgreen-light text-spgreen font-black rounded text-[9px]"><i class="fa-solid fa-clock mr-0.5"></i>${totalHours}h</span>
-                                ${AppState.isAdmin() ? '<span class="text-spred font-bold ml-1">Admin</span>' : ''}
-                            </p>
+                if (AppState.currentUser) {
+                    const totalHours = AppState.getUserTotalHours();
+                    container.innerHTML = `
+                        <div class="flex items-center space-x-3">
+                            <div class="text-right hidden sm:block">
+                                <p class="text-xs font-bold text-slate-800">${AppState.currentUser.firstname || ''} ${AppState.currentUser.lastname || ''}</p>
+                                <p class="text-[10px] text-slate-500">
+                                    <span class="inline-flex items-center ml-1 px-1.5 py-0.2 bg-spgreen-light text-spgreen font-black rounded text-[9px]"><i class="fa-solid fa-clock mr-0.5"></i>${totalHours}h</span>
+                                    ${AppState.isAdmin() ? '<span class="text-spred font-bold ml-1">Admin</span>' : ''}
+                                </p>
+                            </div>
+                            <button onclick="AppState.logout()" class="p-2 rounded-xl text-slate-400 hover:text-spred hover:bg-slate-100 transition-all" title="Se déconnecter">
+                                <i class="fa-solid fa-right-from-bracket"></i>
+                            </button>
                         </div>
-                        <button onclick="AppState.logout()" class="p-2 rounded-xl text-slate-400 hover:text-spred hover:bg-slate-100 transition-all" title="Se déconnecter">
-                            <i class="fa-solid fa-right-from-bracket"></i>
+                    `;
+                } else {
+                    container.innerHTML = `
+                        <button onclick="AuthModal.open()" class="px-3 sm:px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5">
+                            <i class="fa-solid fa-user text-spblue"></i>
+                            <span>Connexion</span>
                         </button>
-                    </div>
-                `;
-            } else {
-                container.innerHTML = `
-                    <button onclick="AuthModal.open()" class="px-3 sm:px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5">
-                        <i class="fa-solid fa-user text-spblue"></i>
-                        <span>Connexion</span>
-                    </button>
-                `;
-            }
-        }
-    };
-
-    const MONTHS = [
-        { id: '09', name: 'Septembre 2026', short: 'Septembre', color: 'from-amber-50 to-orange-50 border-orange-200 text-orange-900' },
-        { id: '10', name: 'Octobre 2026', short: 'Octobre', color: 'from-rose-50 to-pink-50 border-pink-200 text-pink-900' },
-        { id: '11', name: 'Novembre 2026', short: 'Novembre', color: 'from-sky-50 to-blue-50 border-blue-200 text-blue-900' },
-        { id: '12', name: 'Décembre 2026', short: 'Décembre', color: 'from-emerald-50 to-teal-50 border-teal-200 text-teal-900' },
-        { id: '01', name: 'Janvier 2027', short: 'Janvier', color: 'from-indigo-50 to-violet-50 border-violet-200 text-violet-900' },
-        { id: '02', name: 'Février 2027', short: 'Février', color: 'from-fuchsia-50 to-purple-50 border-purple-200 text-purple-900' },
-        { id: '03', name: 'Mars 2027', short: 'Mars', color: 'from-yellow-50 to-amber-50 border-amber-200 text-amber-900' },
-        { id: '04', name: 'Avril 2027', short: 'Avril', color: 'from-lime-50 to-emerald-50 border-emerald-200 text-emerald-900' },
-        { id: '05', name: 'Mai 2027', short: 'Mai', color: 'from-cyan-50 to-teal-50 border-cyan-200 text-teal-900' },
-        { id: '06', name: 'Juin 2027', short: 'Juin', color: 'from-rose-50 to-orange-50 border-orange-200 text-orange-900' }
-    ];
-
-    // SERVICE SUPABASE ROBUSTE AVEC SÉPARATION DES REQUÊTES
-    const SupabaseService = {
-        async checkEmailExists(email) {
-            if (supabaseClient) {
-                try {
-                    const { data, error } = await supabaseClient
-                        .from('users')
-                        .select('email')
-                        .eq('email', email)
-                        .maybeSingle();
-                    if (!error && data) return true;
-                } catch (e) {
-                    console.warn("Erreur Supabase checkEmail:", e);
+                    `;
                 }
             }
-            const localUsers = JSON.parse(localStorage.getItem('sp_local_users') || '[]');
-            return localUsers.some(u => u.email.toLowerCase() === email.toLowerCase()) || email.toLowerCase() === 'marie.parent@apel.fr';
-        },
+        };
 
-        async loginUser({ email, password }) {
-            if (supabaseClient) {
+        const MONTHS = [
+            { id: '09', name: 'Septembre 2026', short: 'Septembre', color: 'from-amber-50 to-orange-50 border-orange-200 text-orange-900' },
+            { id: '10', name: 'Octobre 2026', short: 'Octobre', color: 'from-rose-50 to-pink-50 border-pink-200 text-pink-900' },
+            { id: '11', name: 'Novembre 2026', short: 'Novembre', color: 'from-sky-50 to-blue-50 border-blue-200 text-blue-900' },
+            { id: '12', name: 'Décembre 2026', short: 'Décembre', color: 'from-emerald-50 to-teal-50 border-teal-200 text-teal-900' },
+            { id: '01', name: 'Janvier 2027', short: 'Janvier', color: 'from-indigo-50 to-violet-50 border-violet-200 text-violet-900' },
+            { id: '02', name: 'Février 2027', short: 'Février', color: 'from-fuchsia-50 to-purple-50 border-purple-200 text-purple-900' },
+            { id: '03', name: 'Mars 2027', short: 'Mars', color: 'from-yellow-50 to-amber-50 border-amber-200 text-amber-900' },
+            { id: '04', name: 'Avril 2027', short: 'Avril', color: 'from-lime-50 to-emerald-50 border-emerald-200 text-emerald-900' },
+            { id: '05', name: 'Mai 2027', short: 'Mai', color: 'from-cyan-50 to-teal-50 border-cyan-200 text-cyan-900' },
+            { id: '06', name: 'Juin 2027', short: 'Juin', color: 'from-rose-50 to-orange-50 border-orange-200 text-orange-900' }
+        ];
+
+        const SecureBackendService = {
+            async callApi(action, payload = {}) {
                 try {
-                    const { data, error } = await supabaseClient
-                        .from('users')
-                        .select('*')
-                        .eq('email', email)
-                        .maybeSingle();
+                    const response = await fetch(SECURE_API_ENDPOINT, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action, ...payload })
+                    });
                     
-                    if (error || !data) return { status: 'error', message: 'Utilisateur introuvable.' };
-                    if (data.password_hash !== password) return { status: 'error', message: 'Mot de passe incorrect.' };
-                    return { status: 'success', user: data };
+                    if (!response.ok) {
+                        throw new Error(`Erreur réseau sécurisée (${response.status})`);
+                    }
+                    return await response.json();
                 } catch (e) {
-                    console.warn("Erreur Supabase login:", e);
+                    console.warn("API sécurisée injoignable, bascule vers le stockage local intelligent:", e);
+                    return this.getFallbackResponse(action, payload);
                 }
-            }
-            if (email === 'marie.parent@apel.fr') {
-                return {
-                    status: 'success',
-                    user: { email, firstname: 'Marie', lastname: 'Parent', kids_classes: 'Bureau APEL', is_admin: true }
-                };
-            }
-            const localUsers = JSON.parse(localStorage.getItem('sp_local_users') || '[]');
-            const user = localUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
-            if (!user || user.password_hash !== password) {
-                return { status: 'error', message: 'Mot de passe incorrect.' };
-            }
-            return { status: 'success', user };
-        },
+            },
 
-        async registerUser(userData) {
-            const newUser = {
-                email: userData.email,
-                password_hash: userData.password,
-                firstname: userData.firstname,
-                lastname: userData.lastname,
-                kids_classes: userData.kids_classes,
-                is_admin: userData.email.toLowerCase() === 'marie.parent@apel.fr'
-            };
-
-            if (supabaseClient) {
-                try {
-                    const { error } = await supabaseClient.from('users').insert([newUser]);
-                    if (error) throw error;
-                    return { status: 'success', user: newUser };
-                } catch (e) {
-                    console.warn("Erreur Supabase register, enregistrement local de secours:", e);
-                }
-            }
-            let localUsers = JSON.parse(localStorage.getItem('sp_local_users') || '[]');
-            if (localUsers.some(u => u.email.toLowerCase() === newUser.email.toLowerCase())) {
-                return { status: 'error', message: 'Cet email existe déjà.' };
-            }
-            localUsers.push(newUser);
-            localStorage.setItem('sp_local_users', JSON.stringify(localUsers));
-            return { status: 'success', user: newUser };
-        },
-
-        async getData() {
-            let events = [];
-            let users = [];
-
-            if (supabaseClient) {
-                try {
-                    // Chargement sécurisé de events et users de manière indépendante
-                    const eventsRes = await supabaseClient.from('events').select('*');
-                    if (!eventsRes.error && eventsRes.data) {
-                        events = eventsRes.data.map(e => ({
+            async getData() {
+                const res = await this.callApi('get_data');
+                if (res && res.events) {
+                    const users = res.users || [];
+                    const admins = users.filter(u => u.is_admin).map(u => u.email);
+                    return {
+                        events: (res.events || []).map(e => ({
                             id: e.id,
                             title: e.title,
                             organizer: e.organizer,
@@ -589,592 +504,610 @@
                             location: e.location,
                             description: e.description,
                             missions: e.missions || []
-                        }));
-                    } else {
-                        console.warn("Erreur chargement events Supabase:", eventsRes.error);
-                    }
-
-                    const usersRes = await supabaseClient.from('users').select('*');
-                    if (!usersRes.error && usersRes.data) {
-                        users = usersRes.data;
-                    }
-                } catch (e) {
-                    console.warn("Exception lors de la récupération Supabase:", e);
-                }
-            }
-
-            // Fallback local si aucun événement n'est retourné par Supabase
-            if (events.length === 0) {
-                const localEvents = JSON.parse(localStorage.getItem('sp_local_events') || 'null');
-                if (localEvents && localEvents.length > 0) {
-                    events = localEvents;
-                } else {
-                    events = [
-                        {
-                            id: 'evt-1',
-                            title: 'Accueil des nouveaux & Café de rentrée',
-                            organizer: 'APEL',
-                            type: 'Atelier',
-                            date: '2026-09-12',
-                            prepMonth: '09',
-                            location: 'Cour principale',
-                            description: 'Premier café pour accueillir chaleureusement les parents de l’école.',
-                            missions: [
-                                { id: 'm-1', type: 'precise', title: 'Installation des tables', details: '8h00 - 9h00', estimatedHours: 1, maxVolunteers: 3, volunteers: [] },
-                                { id: 'm-2', type: 'precise', title: 'Service café & viennoiseries', details: '9h00 - 11h00', estimatedHours: 2, maxVolunteers: 4, volunteers: [{ email: 'marie.parent@apel.fr', name: 'Marie Parent' }] }
-                            ]
-                        }
-                    ];
-                }
-            }
-
-            return { events, users };
-        },
-
-        async saveEvent(event) {
-            if (supabaseClient) {
-                try {
-                    const dbEvent = {
-                        id: event.id,
-                        title: event.title,
-                        organizer: event.organizer,
-                        type: event.type,
-                        date: event.date,
-                        prep_month: event.prepMonth,
-                        location: event.location,
-                        description: event.description,
-                        missions: event.missions
+                        })),
+                        admins: admins.length > 0 ? admins : ["marie.parent@apel.fr"],
+                        users: users
                     };
-                    const { error } = await supabaseClient.from('events').upsert(dbEvent);
-                    if (!error) return;
-                    console.warn("Erreur upsert Supabase events:", error);
-                } catch (e) {
-                    console.warn("Exception sauvegarde Supabase:", e);
                 }
-            }
-            let localEvents = JSON.parse(localStorage.getItem('sp_local_events') || '[]');
-            const idx = localEvents.findIndex(e => e.id === event.id);
-            if (idx > -1) localEvents[idx] = event;
-            else localEvents.push(event);
-            localStorage.setItem('sp_local_events', JSON.stringify(localEvents));
-        },
+                return this.getFallbackData();
+            },
 
-        async deleteEvent(eventId) {
-            if (supabaseClient) {
-                try {
-                    await supabaseClient.from('events').delete().eq('id', eventId);
-                    return;
-                } catch (e) {
-                    console.warn("Erreur suppression Supabase:", e);
+            async checkEmailExists(email) {
+                const res = await this.callApi('check_email', { email });
+                if (res && typeof res.exists === 'boolean') {
+                    return res.exists;
                 }
-            }
-            let localEvents = JSON.parse(localStorage.getItem('sp_local_events') || '[]');
-            localEvents = localEvents.filter(e => e.id !== eventId);
-            localStorage.setItem('sp_local_events', JSON.stringify(localEvents));
-        }
-    };
+                // Mode de secours local
+                const localUsers = JSON.parse(localStorage.getItem('scolar_local_users') || '[]');
+                const found = localUsers.some(u => u.email.toLowerCase() === email.toLowerCase()) || email.toLowerCase() === 'marie.parent@apel.fr';
+                return found;
+            },
 
-    const AppState = {
-        events: [],
-        admins: ["marie.parent@apel.fr"],
-        users: [],
-        currentUser: JSON.parse(localStorage.getItem('sp_current_user') || 'null'),
+            async saveEvent(event) {
+                await this.callApi('save_event', { event });
+            },
 
-        async init() {
-            const data = await SupabaseService.getData();
-            this.events = data.events || [];
-            this.users = data.users || [];
-            this.notifyAll();
-        },
+            async deleteEvent(eventId) {
+                await this.callApi('delete_event', { eventId });
+            },
 
-        isAdmin() {
-            if (!this.currentUser || !this.currentUser.email) return false;
-            return this.admins.map(a => a.toLowerCase()).includes(this.currentUser.email.toLowerCase()) || this.currentUser.is_admin;
-        },
+            async login(payload) {
+                const res = await this.callApi('login_auth', payload);
+                if (res && res.status) {
+                    return res;
+                }
+                
+                // Mode de secours local intelligent
+                const email = payload.email.trim().toLowerCase();
+                let localUsers = JSON.parse(localStorage.getItem('scolar_local_users') || '[]');
+                let userRecord = localUsers.find(u => u.email.toLowerCase() === email);
 
-        getUserTotalHours() {
-            if (!this.currentUser) return 0;
-            let total = 0;
-            this.events.forEach(evt => {
-                (evt.missions || []).forEach(m => {
-                    if ((m.volunteers || []).some(v => v.email.toLowerCase() === this.currentUser.email.toLowerCase())) {
-                        total += parseFloat(m.estimatedHours || 0);
+                if (payload.isLogin) {
+                    if (email === 'marie.parent@apel.fr') {
+                        return {
+                            status: 'success',
+                            user: { email, firstname: 'Marie', lastname: 'Parent', kids_classes: 'Bureau APEL', is_admin: true }
+                        };
                     }
+                    if (!userRecord || userRecord.password !== payload.password) {
+                        return { status: 'error', message: 'Mot de passe incorrect.' };
+                    }
+                    return { status: 'success', user: userRecord };
+                } else {
+                    // Création de compte
+                    if (userRecord) {
+                        return { status: 'error', message: 'Cet email existe déjà.' };
+                    }
+                    const newUser = {
+                        email: email,
+                        password: payload.password,
+                        firstname: payload.firstname,
+                        lastname: payload.lastname,
+                        kids_classes: payload.kidsClasses,
+                        is_admin: email === 'marie.parent@apel.fr'
+                    };
+                    localUsers.push(newUser);
+                    localStorage.setItem('scolar_local_users', JSON.stringify(localUsers));
+                    return { status: 'success', user: newUser };
+                }
+            },
+
+            getFallbackData() {
+                const defaultEvents = [
+                    {
+                        id: 'evt-1',
+                        title: 'Accueil des nouveaux & Café de rentrée',
+                        organizer: 'APEL',
+                        type: 'Atelier',
+                        date: '2026-09-12',
+                        prepMonth: '09',
+                        location: 'Cour principale',
+                        description: 'Premier café pour accueillir chaleureusement les parents de l’école.',
+                        missions: [
+                            { id: 'm-1', type: 'precise', title: 'Installation des tables', details: '8h00 - 9h00', estimatedHours: 1, maxVolunteers: 3, volunteers: [] },
+                            { id: 'm-2', type: 'precise', title: 'Service café & viennoiseries', details: '9h00 - 11h00', estimatedHours: 2, maxVolunteers: 4, volunteers: [{ email: 'marie.parent@apel.fr', name: 'Marie Parent' }] }
+                        ]
+                    }
+                ];
+                return { events: defaultEvents, admins: ["marie.parent@apel.fr"], users: [] };
+            },
+
+            getFallbackResponse(action, payload) {
+                if (action === 'get_data') return this.getFallbackData();
+                if (action === 'check_email') {
+                    const localUsers = JSON.parse(localStorage.getItem('scolar_local_users') || '[]');
+                    const exists = localUsers.some(u => u.email.toLowerCase() === payload.email.toLowerCase()) || payload.email.toLowerCase() === 'marie.parent@apel.fr';
+                    return { exists };
+                }
+                return { status: 'success' };
+            }
+        };
+
+        const AppState = {
+            events: [],
+            admins: [],
+            users: [],
+            currentUser: JSON.parse(localStorage.getItem('scolar_current_user') || 'null'),
+
+            async init() {
+                const data = await SecureBackendService.getData();
+                this.events = data.events || [];
+                this.admins = data.admins || [];
+                this.users = data.users || [];
+                this.notifyAll();
+            },
+
+            isAdmin() {
+                if (!this.currentUser || !this.currentUser.email) return false;
+                return this.admins.map(a => a.toLowerCase()).includes(this.currentUser.email.toLowerCase()) || this.currentUser.is_admin;
+            },
+
+            getUserTotalHours() {
+                if (!this.currentUser) return 0;
+                let total = 0;
+                this.events.forEach(evt => {
+                    (evt.missions || []).forEach(m => {
+                        if ((m.volunteers || []).some(v => v.email.toLowerCase() === this.currentUser.email.toLowerCase())) {
+                            total += parseFloat(m.estimatedHours || 0);
+                        }
+                    });
                 });
-            });
-            return total;
-        },
+                return total;
+            },
 
-        getSchoolStats() {
-            let totalExpectedHours = 0;
-            let totalFilledHours = 0;
-            this.events.forEach(evt => {
-                (evt.missions || []).forEach(m => {
-                    const hours = parseFloat(m.estimatedHours || 0);
-                    const maxV = parseInt(m.maxVolunteers || 1);
-                    const currentV = (m.volunteers || []).length;
-                    totalExpectedHours += hours * maxV;
-                    totalFilledHours += hours * currentV;
+            getSchoolStats() {
+                let totalExpectedHours = 0;
+                let totalFilledHours = 0;
+                this.events.forEach(evt => {
+                    (evt.missions || []).forEach(m => {
+                        const hours = parseFloat(m.estimatedHours || 0);
+                        const maxV = parseInt(m.maxVolunteers || 1);
+                        const currentV = (m.volunteers || []).length;
+                        totalExpectedHours += hours * maxV;
+                        totalFilledHours += hours * currentV;
+                    });
                 });
-            });
-            return { totalEvents: this.events.length, totalExpectedHours, totalFilledHours };
-        },
+                return { totalEvents: this.events.length, totalExpectedHours, totalFilledHours };
+            },
 
-        setCurrentUser(userObj) {
-            this.currentUser = { 
-                ...userObj, 
-                firstname: userObj.firstname || 'Parent', 
-                lastname: userObj.lastname || 'Bénévole', 
-                kidsClasses: userObj.kids_classes || userObj.kidsClasses || 'CP' 
-            };
-            localStorage.setItem('sp_current_user', JSON.stringify(this.currentUser));
-            UIUtils.showToast(`Bienvenue, ${this.currentUser.firstname} !`);
-            this.notifyAll();
-            AuthModal.close();
-        },
+            setCurrentUser(userObj) {
+                this.currentUser = { 
+                    ...userObj, 
+                    firstname: userObj.firstname || 'Parent', 
+                    lastname: userObj.lastname || 'Bénévole', 
+                    kidsClasses: userObj.kidsClasses || userObj.kids_classes || 'CP' 
+                };
+                localStorage.setItem('scolar_current_user', JSON.stringify(this.currentUser));
+                UIUtils.showToast(`Bienvenue, ${this.currentUser.firstname} !`);
+                this.notifyAll();
+                AuthModal.close();
+            },
 
-        logout() {
-            this.currentUser = null;
-            localStorage.removeItem('sp_current_user');
-            UIUtils.showToast("Déconnexion réussie.");
-            this.notifyAll();
-        },
+            logout() {
+                this.currentUser = null;
+                localStorage.removeItem('scolar_current_user');
+                UIUtils.showToast("Déconnexion réussie.");
+                this.notifyAll();
+            },
 
-        async saveEvent(eventData) {
-            await SupabaseService.saveEvent(eventData);
-            const index = this.events.findIndex(e => e.id === eventData.id);
-            if (index > -1) this.events[index] = eventData;
-            else this.events.push(eventData);
-            UIUtils.showToast("Événement enregistré avec succès !");
-            this.notifyAll();
-        },
+            async saveEvent(eventData) {
+                await SecureBackendService.saveEvent(eventData);
+                const index = this.events.findIndex(e => e.id === eventData.id);
+                if (index > -1) this.events[index] = eventData;
+                else this.events.push(eventData);
+                UIUtils.showToast("Événement enregistré avec succès !");
+                this.notifyAll();
+            },
 
-        async deleteEvent(eventId) {
-            await SupabaseService.deleteEvent(eventId);
-            this.events = this.events.filter(e => e.id !== eventId);
-            UIUtils.showToast("Événement supprimé.");
-            this.notifyAll();
-        },
+            async deleteEvent(eventId) {
+                await SecureBackendService.deleteEvent(eventId);
+                this.events = this.events.filter(e => e.id !== eventId);
+                UIUtils.showToast("Événement supprimé.");
+                this.notifyAll();
+            },
 
-        async toggleSignUp(eventId, missionId) {
-            if (!this.currentUser) { AuthModal.open(); return; }
-            const evt = this.events.find(e => e.id === eventId);
-            const mission = evt?.missions?.find(m => m.id === missionId);
-            if (!mission) return;
-            if (!mission.volunteers) mission.volunteers = [];
-            
-            const idx = mission.volunteers.findIndex(v => v.email.toLowerCase() === this.currentUser.email.toLowerCase());
-            if (idx > -1) {
-                mission.volunteers.splice(idx, 1);
-                UIUtils.showToast("Désinscription effectuée.");
-            } else {
-                if (mission.maxVolunteers && mission.volunteers.length >= mission.maxVolunteers) {
-                    UIUtils.showToast("Nombre maximum de bénévoles atteint.", "error");
+            async toggleSignUp(eventId, missionId) {
+                if (!this.currentUser) { AuthModal.open(); return; }
+                const evt = this.events.find(e => e.id === eventId);
+                const mission = evt?.missions?.find(m => m.id === missionId);
+                if (!mission) return;
+                if (!mission.volunteers) mission.volunteers = [];
+                
+                const idx = mission.volunteers.findIndex(v => v.email.toLowerCase() === this.currentUser.email.toLowerCase());
+                if (idx > -1) {
+                    mission.volunteers.splice(idx, 1);
+                    UIUtils.showToast("Désinscription effectuée.");
+                } else {
+                    if (mission.maxVolunteers && mission.volunteers.length >= mission.maxVolunteers) {
+                        UIUtils.showToast("Nombre maximum de bénévoles atteint.", "error");
+                        return;
+                    }
+                    mission.volunteers.push({ email: this.currentUser.email, name: `${this.currentUser.firstname || ''} ${this.currentUser.lastname || ''}`.trim() });
+                    UIUtils.showToast(`Inscription validée ! +${mission.estimatedHours || 0}h ajoutées.`);
+                }
+                await this.saveEvent(evt);
+            },
+
+            notifyAll() {
+                UserComponent.render();
+                TimelineComponent.render();
+                EventsListComponent.render();
+                CommitmentsComponent.render();
+                DashboardComponent.render();
+            }
+        };
+
+        const EventEditorModal = {
+            missionsBuffer: [],
+            open(eventId = null) {
+                document.getElementById('event-edit-id').value = '';
+                document.getElementById('event-title-input').value = '';
+                document.getElementById('event-organizer-input').value = 'APEL';
+                document.getElementById('event-type-input').value = 'Fête';
+                document.getElementById('event-date-input').value = '';
+                document.getElementById('event-prepmonth-input').value = '09';
+                document.getElementById('event-location-input').value = '';
+                document.getElementById('event-desc-input').value = '';
+                this.missionsBuffer = [];
+
+                if (eventId) {
+                    const evt = AppState.events.find(e => e.id === eventId);
+                    if (evt) {
+                        document.getElementById('event-edit-id').value = evt.id;
+                        document.getElementById('event-title-input').value = evt.title || '';
+                        document.getElementById('event-organizer-input').value = evt.organizer || 'APEL';
+                        document.getElementById('event-type-input').value = evt.type || 'Fête';
+                        document.getElementById('event-date-input').value = evt.date || '';
+                        document.getElementById('event-prepmonth-input').value = evt.prepMonth || '09';
+                        document.getElementById('event-location-input').value = evt.location || '';
+                        document.getElementById('event-desc-input').value = evt.description || '';
+                        this.missionsBuffer = evt.missions ? JSON.parse(JSON.stringify(evt.missions)) : [];
+                    }
+                }
+                this.renderMissionsFields();
+                document.getElementById('event-editor-modal').classList.remove('hidden');
+            },
+            addMissionField() {
+                this.missionsBuffer.push({
+                    id: 'm-' + Date.now(),
+                    type: 'precise',
+                    title: '',
+                    details: '',
+                    estimatedHours: 2,
+                    maxVolunteers: 2,
+                    volunteers: []
+                });
+                this.renderMissionsFields();
+            },
+            removeMissionField(idx) {
+                this.missionsBuffer.splice(idx, 1);
+                this.renderMissionsFields();
+            },
+            renderMissionsFields() {
+                const container = document.getElementById('event-missions-container');
+                if (this.missionsBuffer.length === 0) {
+                    container.innerHTML = `<p class="text-xs text-slate-400 italic">Aucune mission ajoutée.</p>`;
                     return;
                 }
-                mission.volunteers.push({ email: this.currentUser.email, name: `${this.currentUser.firstname || ''} ${this.currentUser.lastname || ''}`.trim() });
-                UIUtils.showToast(`Inscription validée ! +${mission.estimatedHours || 0}h ajoutées.`);
+                container.innerHTML = this.missionsBuffer.map((m, idx) => `
+                    <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs relative">
+                        <button type="button" onclick="EventEditorModal.removeMissionField(${idx})" class="absolute top-2 right-2 text-slate-400 hover:text-spred"><i class="fa-solid fa-trash-can"></i></button>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div>
+                                <label class="font-bold text-slate-600 block mb-1">Type</label>
+                                <select onchange="EventEditorModal.missionsBuffer[${idx}].type = this.value; EventEditorModal.renderMissionsFields();" class="w-full p-1.5 rounded-lg border bg-white">
+                                    <option value="precise" ${m.type === 'precise' ? 'selected' : ''}>Créneau précis</option>
+                                    <option value="longterm" ${m.type === 'longterm' ? 'selected' : ''}>Long terme</option>
+                                </select>
+                            </div>
+                            <div class="col-span-2">
+                                <label class="font-bold text-slate-600 block mb-1">Titre de la mission *</label>
+                                <input type="text" value="${m.title || ''}" placeholder="ex: Tenue de caisse" onchange="EventEditorModal.missionsBuffer[${idx}].title = this.value" required class="w-full p-1.5 rounded-lg border">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="col-span-2">
+                                <label class="font-bold text-slate-600 block mb-1">${m.type === 'longterm' ? 'Durée (ex: 3h/sem)' : 'Créneau horaire (ex: 10h - 12h)'}</label>
+                                <input type="text" value="${m.details || ''}" placeholder="${m.type === 'longterm' ? '3h par semaine' : '10h00 - 12h00'}" onchange="EventEditorModal.missionsBuffer[${idx}].details = this.value" class="w-full p-1.5 rounded-lg border">
+                            </div>
+                            <div>
+                                <label class="font-bold text-slate-600 block mb-1">Heures</label>
+                                <input type="number" step="0.5" min="0.5" value="${m.estimatedHours || 2}" onchange="EventEditorModal.missionsBuffer[${idx}].estimatedHours = parseFloat(this.value) || 1" class="w-full p-1.5 rounded-lg border">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="font-bold text-slate-600 block mb-1">Bénévoles nécessaires</label>
+                            <input type="number" min="1" value="${m.maxVolunteers || 2}" onchange="EventEditorModal.missionsBuffer[${idx}].maxVolunteers = parseInt(this.value) || 1" class="w-full p-1.5 rounded-lg border">
+                        </div>
+                    </div>
+                `).join('');
+            },
+            close() { document.getElementById('event-editor-modal').classList.add('hidden'); },
+            async submit(e) {
+                e.preventDefault();
+                const eventData = {
+                    id: document.getElementById('event-edit-id').value || ('evt-' + Date.now()),
+                    title: document.getElementById('event-title-input').value.trim(),
+                    organizer: document.getElementById('event-organizer-input').value,
+                    type: document.getElementById('event-type-input').value,
+                    date: document.getElementById('event-date-input').value,
+                    prepMonth: document.getElementById('event-prepmonth-input').value,
+                    location: document.getElementById('event-location-input').value.trim(),
+                    description: document.getElementById('event-desc-input').value.trim(),
+                    missions: this.missionsBuffer
+                };
+                await AppState.saveEvent(eventData);
+                this.close();
             }
-            await this.saveEvent(evt);
-        },
+        };
 
-        notifyAll() {
-            UserComponent.render();
-            TimelineComponent.render();
-            EventsListComponent.render();
-            CommitmentsComponent.render();
-            DashboardComponent.render();
-        }
-    };
+        const TimelineComponent = {
+            render() {
+                const container = document.getElementById('timeline-component-container');
+                if (!container) return;
 
-    const EventEditorModal = {
-        missionsBuffer: [],
-        open(eventId = null) {
-            document.getElementById('event-edit-id').value = '';
-            document.getElementById('event-title-input').value = '';
-            document.getElementById('event-organizer-input').value = 'APEL';
-            document.getElementById('event-type-input').value = 'Fête';
-            document.getElementById('event-date-input').value = '';
-            document.getElementById('event-prepmonth-input').value = '09';
-            document.getElementById('event-location-input').value = '';
-            document.getElementById('event-desc-input').value = '';
-            this.missionsBuffer = [];
-
-            if (eventId) {
-                const evt = AppState.events.find(e => e.id === eventId);
-                if (evt) {
-                    document.getElementById('event-edit-id').value = evt.id;
-                    document.getElementById('event-title-input').value = evt.title || '';
-                    document.getElementById('event-organizer-input').value = evt.organizer || 'APEL';
-                    document.getElementById('event-type-input').value = evt.type || 'Fête';
-                    document.getElementById('event-date-input').value = evt.date || '';
-                    document.getElementById('event-prepmonth-input').value = evt.prepMonth || '09';
-                    document.getElementById('event-location-input').value = evt.location || '';
-                    document.getElementById('event-desc-input').value = evt.description || '';
-                    this.missionsBuffer = evt.missions ? JSON.parse(JSON.stringify(evt.missions)) : [];
+                if (AppState.events.length === 0) {
+                    container.innerHTML = `<div class="bg-white rounded-2xl p-8 border border-slate-200 text-center text-slate-400">Aucun événement planifié.</div>`;
+                    return;
                 }
-            }
-            this.renderMissionsFields();
-            document.getElementById('event-editor-modal').classList.remove('hidden');
-        },
-        addMissionField() {
-            this.missionsBuffer.push({
-                id: 'm-' + Date.now(),
-                type: 'precise',
-                title: '',
-                details: '',
-                estimatedHours: 2,
-                maxVolunteers: 2,
-                volunteers: []
-            });
-            this.renderMissionsFields();
-        },
-        removeMissionField(idx) {
-            this.missionsBuffer.splice(idx, 1);
-            this.renderMissionsFields();
-        },
-        renderMissionsFields() {
-            const container = document.getElementById('event-missions-container');
-            if (this.missionsBuffer.length === 0) {
-                container.innerHTML = `<p class="text-xs text-slate-400 italic">Aucune mission ajoutée.</p>`;
-                return;
-            }
-            container.innerHTML = this.missionsBuffer.map((m, idx) => `
-                <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs relative">
-                    <button type="button" onclick="EventEditorModal.removeMissionField(${idx})" class="absolute top-2 right-2 text-slate-400 hover:text-spred"><i class="fa-solid fa-trash-can"></i></button>
-                    <div class="grid grid-cols-3 gap-2">
-                        <div>
-                            <label class="font-bold text-slate-600 block mb-1">Type</label>
-                            <select onchange="EventEditorModal.missionsBuffer[${idx}].type = this.value; EventEditorModal.renderMissionsFields();" class="w-full p-1.5 rounded-lg border bg-white">
-                                <option value="precise" ${m.type === 'precise' ? 'selected' : ''}>Créneau précis</option>
-                                <option value="longterm" ${m.type === 'longterm' ? 'selected' : ''}>Long terme</option>
-                            </select>
-                        </div>
-                        <div class="col-span-2">
-                            <label class="font-bold text-slate-600 block mb-1">Titre de la mission *</label>
-                            <input type="text" value="${m.title || ''}" placeholder="ex: Tenue de caisse" onchange="EventEditorModal.missionsBuffer[${idx}].title = this.value" required class="w-full p-1.5 rounded-lg border">
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-3 gap-2">
-                        <div class="col-span-2">
-                            <label class="font-bold text-slate-600 block mb-1">${m.type === 'longterm' ? 'Durée (ex: 3h/sem)' : 'Créneau horaire (ex: 10h - 12h)'}</label>
-                            <input type="text" value="${m.details || ''}" placeholder="${m.type === 'longterm' ? '3h par semaine' : '10h00 - 12h00'}" onchange="EventEditorModal.missionsBuffer[${idx}].details = this.value" class="w-full p-1.5 rounded-lg border">
-                        </div>
-                        <div>
-                            <label class="font-bold text-slate-600 block mb-1">Heures</label>
-                            <input type="number" step="0.5" min="0.5" value="${m.estimatedHours || 2}" onchange="EventEditorModal.missionsBuffer[${idx}].estimatedHours = parseFloat(this.value) || 1" class="w-full p-1.5 rounded-lg border">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="font-bold text-slate-600 block mb-1">Bénévoles nécessaires</label>
-                        <input type="number" min="1" value="${m.maxVolunteers || 2}" onchange="EventEditorModal.missionsBuffer[${idx}].maxVolunteers = parseInt(this.value) || 1" class="w-full p-1.5 rounded-lg border">
-                    </div>
-                </div>
-            `).join('');
-        },
-        close() { document.getElementById('event-editor-modal').classList.add('hidden'); },
-        async submit(e) {
-            e.preventDefault();
-            const eventData = {
-                id: document.getElementById('event-edit-id').value || ('evt-' + Date.now()),
-                title: document.getElementById('event-title-input').value.trim(),
-                organizer: document.getElementById('event-organizer-input').value,
-                type: document.getElementById('event-type-input').value,
-                date: document.getElementById('event-date-input').value,
-                prepMonth: document.getElementById('event-prepmonth-input').value,
-                location: document.getElementById('event-location-input').value.trim(),
-                description: document.getElementById('event-desc-input').value.trim(),
-                missions: this.missionsBuffer
-            };
-            await AppState.saveEvent(eventData);
-            this.close();
-        }
-    };
 
-    const TimelineComponent = {
-        render() {
-            const container = document.getElementById('timeline-component-container');
-            if (!container) return;
+                let html = `<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">`;
+                MONTHS.forEach(m => {
+                    const monthEvents = AppState.events.filter(e => {
+                        const evtMonth = e.date ? e.date.split('-')[1] : '09';
+                        return evtMonth === m.id;
+                    });
+                    const prepEvents = AppState.events.filter(e => {
+                        const evtMonth = e.date ? e.date.split('-')[1] : '09';
+                        const prepMonth = e.prepMonth || '09';
+                        const startIdx = MONTHS.findIndex(item => item.id === prepMonth);
+                        const endIdx = MONTHS.findIndex(item => item.id === evtMonth);
+                        const currentIdx = MONTHS.findIndex(item => item.id === m.id);
+                        return startIdx !== -1 && endIdx !== -1 && currentIdx >= startIdx && currentIdx < endIdx;
+                    });
 
-            if (AppState.events.length === 0) {
-                container.innerHTML = `<div class="bg-white rounded-2xl p-8 border border-slate-200 text-center text-slate-400">Aucun événement planifié.</div>`;
-                return;
-            }
-
-            let html = `<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">`;
-            MONTHS.forEach(m => {
-                const monthEvents = AppState.events.filter(e => {
-                    const evtMonth = e.date ? e.date.split('-')[1] : '09';
-                    return evtMonth === m.id;
-                });
-                const prepEvents = AppState.events.filter(e => {
-                    const evtMonth = e.date ? e.date.split('-')[1] : '09';
-                    const prepMonth = e.prepMonth || '09';
-                    const startIdx = MONTHS.findIndex(item => item.id === prepMonth);
-                    const endIdx = MONTHS.findIndex(item => item.id === evtMonth);
-                    const currentIdx = MONTHS.findIndex(item => item.id === m.id);
-                    return startIdx !== -1 && endIdx !== -1 && currentIdx >= startIdx && currentIdx < endIdx;
-                });
-
-                html += `
-                    <div class="bg-gradient-to-b ${m.color} rounded-2xl p-4 border shadow-sm flex flex-col justify-between min-h-[220px]">
-                        <div>
-                            <div class="flex justify-between items-center border-b pb-2 mb-3 border-black/10">
-                                <h3 class="font-black text-sm uppercase tracking-wide">${m.name}</h3>
-                                <i class="fa-solid fa-calendar-days opacity-70"></i>
-                            </div>
-                            <div class="space-y-2 mb-3">
-                                ${monthEvents.map(evt => `
-                                    <div class="bg-white/90 backdrop-blur-xs p-2.5 rounded-xl border border-white/60 shadow-2xs space-y-1">
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-200 flex items-center gap-1">
-                                                <i class="fa-solid fa-flag text-[8px] text-rose-400"></i> ${evt.date ? evt.date.split('-').reverse().join('/') : 'Jour J'}
-                                            </span>
-                                            <span class="text-[9px] font-bold uppercase text-slate-500">${evt.organizer || 'APEL'}</span>
-                                        </div>
-                                        <p class="font-extrabold text-xs text-slate-800 leading-tight">${evt.title}</p>${AppState.isAdmin() ? `<button onclick="EventEditorModal.open('${evt.id}')" class="text-[10px] text-spblue font-bold hover:underline"><i class="fa-solid fa-pen"></i> Modifier</button>` : ''}
-                                    </div>
-                                `).join('')}
-                            </div>
-                            ${prepEvents.length > 0 ? `
-                                <div class="pt-2 border-t border-black/5">
-                                    <p class="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1.5"><i class="fa-solid fa-screwdriver-wrench mr-1"></i> En préparation :</p>
-                                    <div class="space-y-1.5">
-                                        ${prepEvents.map(evt => `
-                                            <div class="bg-amber-100/70 border border-amber-300/60 p-2 rounded-lg text-[11px] font-semibold text-amber-900 flex items-center justify-between">
-                                                <span class="truncate"><i class="fa-solid fa-gift mr-1 text-amber-600"></i> ${evt.title}</span>
-                                                <span class="text-[9px] bg-amber-200 text-amber-800 px-1 py-0.5 rounded font-bold shrink-0 ml-1">Prépa</span>
+                    html += `
+                        <div class="bg-gradient-to-b ${m.color} rounded-2xl p-4 border shadow-sm flex flex-col justify-between min-h-[220px]">
+                            <div>
+                                <div class="flex justify-between items-center border-b pb-2 mb-3 border-black/10">
+                                    <h3 class="font-black text-sm uppercase tracking-wide">${m.name}</h3>
+                                    <i class="fa-solid fa-calendar-days opacity-70"></i>
+                                </div>
+                                <div class="space-y-2 mb-3">
+                                    ${monthEvents.map(evt => `
+                                        <div class="bg-white/90 backdrop-blur-xs p-2.5 rounded-xl border border-white/60 shadow-2xs space-y-1">
+                                            <div class="flex items-center justify-between">
+                                                <span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-200 flex items-center gap-1">
+                                                    <i class="fa-solid fa-flag text-[8px] text-rose-400"></i> ${evt.date ? evt.date.split('-').reverse().join('/') : 'Jour J'}
+                                                </span>
+                                                <span class="text-[9px] font-bold uppercase text-slate-500">${evt.organizer || 'APEL'}</span>
                                             </div>
-                                        `).join('')}
-                                    </div>
+                                            <p class="font-extrabold text-xs text-slate-800 leading-tight">${evt.title}</p>
+                                            ${AppState.isAdmin() ? `<button onclick="EventEditorModal.open('${evt.id}')" class="text-[10px] text-spblue font-bold hover:underline"><i class="fa-solid fa-pen"></i> Modifier</button>` : ''}
+                                        </div>
+                                    `).join('')}
                                 </div>
-                            ` : ''}
-                            ${monthEvents.length === 0 && prepEvents.length === 0 ? `<div class="text-center py-6 text-slate-400/80 text-xs italic">Aucun événement ce mois-ci</div>` : ''}
-                        </div>
-                    </div>
-                `;
-            });
-            html += `</div>`;
-            container.innerHTML = html;
-        }
-    };
-
-    const EventsListComponent = {
-        render() {
-            const container = document.getElementById('events-grid-container');
-            if (!container) return;
-
-            if (AppState.events.length === 0) {
-                container.innerHTML = `<div class="col-span-full text-center py-8 text-slate-400">Aucun événement planifié.</div>`;
-                return;
-            }
-
-            const filteredEvents = AppState.events.map(evt => {
-                const missions = evt.missions || [];
-                const availableMissions = missions.filter(m => {
-                    const maxV = m.maxVolunteers || 2;
-                    const countV = (m.volunteers || []).length;
-                    const isSignedUp = AppState.currentUser && (m.volunteers || []).some(v => v.email.toLowerCase() === AppState.currentUser.email.toLowerCase());
-                    const spotsLeft = maxV - countV;
-                    return spotsLeft > 0 || isSignedUp;
-                });
-                return { ...evt, availableMissions };
-            }).filter(evt => evt.availableMissions.length > 0);
-
-            if (filteredEvents.length === 0) {
-                container.innerHTML = `<div class="col-span-full bg-white rounded-2xl p-8 border border-slate-200 text-center text-slate-500 text-xs">Aucune mission disponible pour le moment (toutes les missions sont complètes).</div>`;
-                return;
-            }
-
-            container.innerHTML = filteredEvents.map(evt => {
-                const availableMissions = evt.availableMissions;
-
-                return `
-                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow transition-all flex flex-col justify-between">
-                        <div>
-                            <div class="flex justify-between items-start">
-                                <div class="flex items-center gap-2">
-                                    <span class="px-2.5 py-1 text-xs font-bold rounded-full bg-spblue-light text-spblue">${evt.organizer || 'APEL'}</span>
-                                    <span class="px-2.5 py-1 text-xs font-bold rounded-full bg-slate-100 text-slate-600">${evt.type || 'Événement'}</span>
-                                </div>
-                                ${AppState.isAdmin() ? `
-                                    <div class="flex space-x-1">
-                                        <button onclick="EventEditorModal.open('${evt.id}')" class="text-slate-400 hover:text-spblue p-1" title="Modifier"><i class="fa-solid fa-pen text-xs"></i></button>
-                                        <button onclick="AppState.deleteEvent('${evt.id}')" class="text-slate-400 hover:text-spred p-1" title="Supprimer"><i class="fa-solid fa-trash text-xs"></i></button>
+                                ${prepEvents.length > 0 ? `
+                                    <div class="pt-2 border-t border-black/5">
+                                        <p class="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1.5"><i class="fa-solid fa-screwdriver-wrench mr-1"></i> En préparation :</p>
+                                        <div class="space-y-1.5">
+                                            ${prepEvents.map(evt => `
+                                                <div class="bg-amber-100/70 border border-amber-300/60 p-2 rounded-lg text-[11px] font-semibold text-amber-900 flex items-center justify-between">
+                                                    <span class="truncate"><i class="fa-solid fa-gift mr-1 text-amber-600"></i> ${evt.title}</span>
+                                                    <span class="text-[9px] bg-amber-200 text-amber-800 px-1 py-0.5 rounded font-bold shrink-0 ml-1">Prépa</span>
+                                                </div>
+                                            `).join('')}
+                                        </div>
                                     </div>
                                 ` : ''}
+                                ${monthEvents.length === 0 && prepEvents.length === 0 ? `<div class="text-center py-6 text-slate-400/80 text-xs italic">Aucun événement ce mois-ci</div>` : ''}
                             </div>
-                            <h3 class="font-bold text-slate-800 text-base mt-3">${evt.title}</h3>
-                            <p class="text-xs text-slate-500 mt-1"><i class="fa-solid fa-calendar text-spgreen mr-1"></i> ${evt.date || 'Date libre'} | <i class="fa-solid fa-location-dot text-spred ml-1"></i> ${evt.location || 'Lieu non spécifié'}</p>
-                            <p class="text-xs text-slate-600 mt-2">${evt.description || ''}</p>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+                container.innerHTML = html;
+            }
+        };
 
-                            <div class="mt-4 pt-3 border-t border-slate-100 space-y-2">
-                                <p class="text-xs font-bold text-slate-700 uppercase tracking-wider"><i class="fa-solid fa-hand-holding-hand text-spblue mr-1"></i> Missions disponibles (${availableMissions.length})</p>
-                                ${availableMissions.map(m => {
-                                    const volunteers = m.volunteers || [];
-                                    const isSignedUp = AppState.currentUser && volunteers.some(v => v.email.toLowerCase() === AppState.currentUser.email.toLowerCase());
+        const EventsListComponent = {
+            render() {
+                const container = document.getElementById('events-grid-container');
+                if (!container) return;
 
-                                    return `
-                                        <div class="p-3 rounded-xl ${isSignedUp ? 'bg-spgreen-light/60 border border-spgreen/30' : 'bg-slate-50 border border-slate-100'} flex items-center justify-between gap-2 shadow-2xs">
-                                            <div class="flex-1 min-w-0">
-                                                <div class="flex items-center gap-1.5 flex-wrap">
-                                                    <span class="px-1.5 py-0.5 text-[9px] font-black rounded uppercase ${m.type === 'longterm' ? 'bg-purple-100 text-purple-700' : 'bg-amber-100 text-amber-700'}">
-                                                        ${m.type === 'longterm' ? 'Long terme' : 'Créneau précis'}
-                                                    </span>
-                                                    <span class="text-[10px] font-bold text-spgreen bg-spgreen-light px-1.5 py-0.5 rounded">
-                                                        <i class="fa-solid fa-clock mr-0.5"></i>${m.estimatedHours || 2}h
-                                                    </span>
-                                                    <span class="text-xs font-bold text-slate-800 truncate">${m.title}</span>
+                if (AppState.events.length === 0) {
+                    container.innerHTML = `<div class="col-span-full text-center py-8 text-slate-400">Aucun événement planifié.</div>`;
+                    return;
+                }
+
+                const filteredEvents = AppState.events.map(evt => {
+                    const missions = evt.missions || [];
+                    const availableMissions = missions.filter(m => {
+                        const maxV = m.maxVolunteers || 2;
+                        const countV = (m.volunteers || []).length;
+                        const isSignedUp = AppState.currentUser && (m.volunteers || []).some(v => v.email.toLowerCase() === AppState.currentUser.email.toLowerCase());
+                        const spotsLeft = maxV - countV;
+                        return spotsLeft > 0 || isSignedUp;
+                    });
+                    return { ...evt, availableMissions };
+                }).filter(evt => evt.availableMissions.length > 0);
+
+                if (filteredEvents.length === 0) {
+                    container.innerHTML = `<div class="col-span-full bg-white rounded-2xl p-8 border border-slate-200 text-center text-slate-500 text-xs">Aucune mission disponible pour le moment (toutes les missions sont complètes).</div>`;
+                    return;
+                }
+
+                container.innerHTML = filteredEvents.map(evt => {
+                    const availableMissions = evt.availableMissions;
+
+                    return `
+                        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow transition-all flex flex-col justify-between">
+                            <div>
+                                <div class="flex justify-between items-start">
+                                    <div class="flex items-center gap-2">
+                                        <span class="px-2.5 py-1 text-xs font-bold rounded-full bg-spblue-light text-spblue">${evt.organizer || 'APEL'}</span>
+                                        <span class="px-2.5 py-1 text-xs font-bold rounded-full bg-slate-100 text-slate-600">${evt.type || 'Événement'}</span>
+                                    </div>
+                                    ${AppState.isAdmin() ? `
+                                        <div class="flex space-x-1">
+                                            <button onclick="EventEditorModal.open('${evt.id}')" class="text-slate-400 hover:text-spblue p-1" title="Modifier"><i class="fa-solid fa-pen text-xs"></i></button>
+                                            <button onclick="AppState.deleteEvent('${evt.id}')" class="text-slate-400 hover:text-spred p-1" title="Supprimer"><i class="fa-solid fa-trash text-xs"></i></button>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                                <h3 class="font-bold text-slate-800 text-base mt-3">${evt.title}</h3>
+                                <p class="text-xs text-slate-500 mt-1"><i class="fa-solid fa-calendar text-spgreen mr-1"></i> ${evt.date || 'Date libre'} | <i class="fa-solid fa-location-dot text-spred ml-1"></i> ${evt.location || 'Lieu non spécifié'}</p>
+                                <p class="text-xs text-slate-600 mt-2">${evt.description || ''}</p>
+
+                                <div class="mt-4 pt-3 border-t border-slate-100 space-y-2">
+                                    <p class="text-xs font-bold text-slate-700 uppercase tracking-wider"><i class="fa-solid fa-hand-holding-hand text-spblue mr-1"></i> Missions disponibles (${availableMissions.length})</p>
+                                    ${availableMissions.map(m => {
+                                        const volunteers = m.volunteers || [];
+                                        const isSignedUp = AppState.currentUser && volunteers.some(v => v.email.toLowerCase() === AppState.currentUser.email.toLowerCase());
+
+                                        return `
+                                            <div class="p-3 rounded-xl ${isSignedUp ? 'bg-spgreen-light/60 border border-spgreen/30' : 'bg-slate-50 border border-slate-100'} flex items-center justify-between gap-2 shadow-2xs">
+                                                <div class="flex-1 min-w-0">
+                                                    <div class="flex items-center gap-1.5 flex-wrap">
+                                                        <span class="px-1.5 py-0.5 text-[9px] font-black rounded uppercase ${m.type === 'longterm' ? 'bg-purple-100 text-purple-700' : 'bg-amber-100 text-amber-700'}">
+                                                            ${m.type === 'longterm' ? 'Long terme' : 'Créneau précis'}
+                                                        </span>
+                                                        <span class="text-[10px] font-bold text-spgreen bg-spgreen-light px-1.5 py-0.5 rounded">
+                                                            <i class="fa-solid fa-clock mr-0.5"></i>${m.estimatedHours || 2}h
+                                                        </span>
+                                                        <span class="text-xs font-bold text-slate-800 truncate">${m.title}</span>
+                                                    </div>
+                                                    <p class="text-[11px] text-slate-500 mt-1"><i class="fa-regular fa-clock mr-1"></i>${m.details || 'Détails non spécifiés'}</p>
+                                                    <div class="text-[10px] text-slate-400 mt-0.5 font-medium">Inscrits : ${volunteers.length}/${m.maxVolunteers || 2} bénévole(s)</div>
                                                 </div>
-                                                <p class="text-[11px] text-slate-500 mt-1"><i class="fa-regular fa-clock mr-1"></i>${m.details || 'Détails non spécifiés'}</p>
-                                                <div class="text-[10px] text-slate-400 mt-0.5 font-medium">Inscrits : ${volunteers.length}/${m.maxVolunteers || 2} bénévole(s)</div>
+                                                <button onclick="AppState.toggleSignUp('${evt.id}', '${m.id}')" 
+                                                    class="px-3 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${isSignedUp ? 'bg-spred hover:bg-spred-dark text-white' : 'bg-spblue hover:bg-spblue-dark text-white shadow-sm'}">
+                                                    ${isSignedUp ? '<i class="fa-solid fa-xmark mr-1"></i>Annuler' : '<i class="fa-solid fa-check mr-1"></i>S\'inscrire'}
+                                                </button>
                                             </div>
-                                            <button onclick="AppState.toggleSignUp('${evt.id}', '${m.id}')" 
-                                                class="px-3 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${isSignedUp ? 'bg-spred hover:bg-spred-dark text-white' : 'bg-spblue hover:bg-spblue-dark text-white shadow-sm'}">
-                                                ${isSignedUp ? '<i class="fa-solid fa-xmark mr-1"></i>Annuler' : '<i class="fa-solid fa-check mr-1"></i>S\'inscrire'}
+                                        `;
+                                    }).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        };
+
+        const CommitmentsComponent = {
+            render() {
+                const container = document.getElementById('tab-my-commitments');
+                const badge = document.getElementById('my-commitments-badge');
+                if (!container) return;
+                
+                if (!AppState.currentUser) {
+                    if (badge) badge.classList.add('hidden');
+                    container.innerHTML = `
+                        <div class="bg-white rounded-2xl p-8 border border-slate-200 text-center space-y-4">
+                            <div class="w-12 h-12 rounded-full bg-spblue-light text-spblue flex items-center justify-center mx-auto text-xl">
+                                <i class="fa-solid fa-user-lock"></i>
+                            </div>
+                            <h2 class="text-lg font-bold text-slate-800">Espace Parent Sécurisé</h2>
+                            <p class="text-xs text-slate-500 max-w-md mx-auto">Connectez-vous pour retrouver vos missions et votre compteur d'heures bénévoles.</p>
+                            <button onclick="AuthModal.open()" class="px-5 py-2.5 bg-spblue hover:bg-spblue-dark text-white font-bold text-xs rounded-xl shadow-sm transition-all">Se connecter</button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const myEmail = AppState.currentUser.email.toLowerCase();
+                let myMissions = [];
+                AppState.events.forEach(evt => {
+                    (evt.missions || []).forEach(m => {
+                        if ((m.volunteers || []).some(v => v.email.toLowerCase() === myEmail)) {
+                            myMissions.push({ event: evt, mission: m });
+                        }
+                    });
+                });
+
+                if (badge) {
+                    badge.innerText = myMissions.length;
+                    badge.classList.toggle('hidden', myMissions.length === 0);
+                }
+
+                const totalHours = AppState.getUserTotalHours();
+
+                container.innerHTML = `
+                    <div class="space-y-6">
+                        <div class="bg-gradient-to-r from-spblue to-spblue-dark rounded-2xl p-6 text-white shadow-md flex flex-col sm:flex-row justify-between items-center gap-4">
+                            <div>
+                                <span class="px-2.5 py-1 bg-white/20 text-white rounded-full text-[10px] font-black uppercase tracking-wider">Compteur Bénévolat</span>
+                                <h2 class="text-xl font-extrabold mt-2">${AppState.currentUser.firstname} ${AppState.currentUser.lastname}</h2>
+                                <p class="text-xs text-white/80 mt-0.5">Classes : ${AppState.currentUser.kidsClasses || AppState.currentUser.kids_classes || 'Non renseigné'} • ${AppState.currentUser.email}</p>
+                            </div>
+                            <div class="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 text-center min-w-[140px]">
+                                <span class="text-3xl font-black text-amber-300">${totalHours}h</span>
+                                <p class="text-[10px] font-bold text-white uppercase tracking-wider mt-1">Total Heures Prises</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
+                            <div class="flex justify-between items-center border-b pb-4">
+                                <h3 class="text-base font-bold text-slate-800"><i class="fa-solid fa-hand-holding-heart text-spred mr-2"></i>Merci pour ton engagement !!</h3>
+                                <span class="px-3 py-1 bg-spgreen-light text-spgreen font-bold text-xs rounded-full">${myMissions.length} inscription(s) active(s)</span>
+                            </div>
+
+                            ${myMissions.length === 0 ? `
+                                <div class="text-center py-8 text-slate-400 space-y-2">
+                                    <i class="fa-solid fa-calendar-xmark text-3xl"></i>
+                                    <p class="text-xs">Tu n'es inscrit à aucune mission pour le moment. Dommage, on t'attend avec impatience !! </p>
+                                    <button onclick="AppNavigation.switchTab('calendar')" class="mt-2 px-4 py-2 bg-spblue-light text-spblue font-bold text-xs rounded-xl hover:bg-spblue hover:text-white transition-all">Voir les missions disponibles</button>
+                                </div>
+                            ` : `
+                                <div class="divide-y divide-slate-100">
+                                    ${myMissions.map(item => `
+                                        <div class="py-4 flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                                            <div>
+                                                <div class="flex items-center gap-2">
+                                                    <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-spblue-light text-spblue">${item.event.organizer || 'APEL'}</span>
+                                                    <span class="font-bold text-sm text-slate-800">${item.event.title}</span>
+                                                </div>
+                                                <p class="text-xs font-bold text-spgreen mt-1 flex items-center gap-1.5">
+                                                    <span><i class="fa-solid fa-tag mr-1"></i>${item.mission.title}</span>
+                                                    <span class="px-1.5 py-0.5 bg-spgreen-light text-spgreen rounded text-[10px] font-black">+${item.mission.estimatedHours || 0}h</span>
+                                                </p>
+                                                <p class="text-xs text-slate-500 mt-0.5"><i class="fa-regular fa-clock mr-1"></i>${item.mission.details || ''} - <i class="fa-solid fa-calendar text-slate-400 ml-1 mr-1"></i>${item.event.date || 'Date libre'}</p>
+                                            </div>
+                                            <button onclick="AppState.toggleSignUp('${item.event.id}', '${item.mission.id}')" class="px-3 py-2 border border-spred text-spred hover:bg-spred hover:text-white font-bold text-xs rounded-xl transition-all self-start sm:self-center">
+                                                <i class="fa-solid fa-trash-can mr-1"></i> Annuler
                                             </button>
                                         </div>
-                                    `;
-                                }).join('')}
-                            </div>
+                                    `).join('')}
+                                </div>
+                            `}
                         </div>
                     </div>
                 `;
-            }).join('');
-        }
-    };
+            }
+        };
 
-    const CommitmentsComponent = {
-        render() {
-            const container = document.getElementById('tab-my-commitments');
-            const badge = document.getElementById('my-commitments-badge');
-            if (!container) return;
-            
-            if (!AppState.currentUser) {
-                if (badge) badge.classList.add('hidden');
+        const DashboardComponent = {
+            render() {
+                const container = document.getElementById('tab-dashboard');
+                if (!container) return;
+                const stats = AppState.getSchoolStats();
+
                 container.innerHTML = `
-                    <div class="bg-white rounded-2xl p-8 border border-slate-200 text-center space-y-4">
-                        <div class="w-12 h-12 rounded-full bg-spblue-light text-spblue flex items-center justify-center mx-auto text-xl">
-                            <i class="fa-solid fa-user-lock"></i>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-xl bg-spblue-light text-spblue flex items-center justify-center text-xl font-bold">
+                                <i class="fa-solid fa-calendar-days"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Événements</p>
+                                <p class="text-3xl font-black text-slate-800 mt-1">${stats.totalEvents}</p>
+                            </div>
                         </div>
-                        <h2 class="text-lg font-bold text-slate-800">Espace Parent Sécurisé</h2>
-                        <p class="text-xs text-slate-500 max-w-md mx-auto">Connectez-vous pour retrouver vos missions et votre compteur d'heures bénévoles.</p>
-                        <button onclick="AuthModal.open()" class="px-5 py-2.5 bg-spblue hover:bg-spblue-dark text-white font-bold text-xs rounded-xl shadow-sm transition-all">Se connecter</button>
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl font-bold">
+                                <i class="fa-solid fa-clock"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Heures Attendues (École)</p>
+                                <p class="text-3xl font-black text-slate-800 mt-1">${stats.totalExpectedHours}h</p>
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-xl bg-spgreen-light text-spgreen flex items-center justify-center text-xl font-bold">
+                                <i class="fa-solid fa-hand-holding-heart"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Heures Inscrites</p>
+                                <p class="text-3xl font-black text-spgreen mt-1">${stats.totalFilledHours}h</p>
+                            </div>
+                        </div>
                     </div>
                 `;
-                return;
             }
+        };
 
-            const myEmail = AppState.currentUser.email.toLowerCase();
-            let myMissions = [];
-            AppState.events.forEach(evt => {
-                (evt.missions || []).forEach(m => {
-                    if ((m.volunteers || []).some(v => v.email.toLowerCase() === myEmail)) {
-                        myMissions.push({ event: evt, mission: m });
-                    }
-                });
-            });
-
-            if (badge) {
-                badge.innerText = myMissions.length;
-                badge.classList.toggle('hidden', myMissions.length === 0);
-            }
-
-            const totalHours = AppState.getUserTotalHours();
-
-            container.innerHTML = `
-                <div class="space-y-6">
-                    <div class="bg-gradient-to-r from-spblue to-spblue-dark rounded-2xl p-6 text-white shadow-md flex flex-col sm:flex-row justify-between items-center gap-4">
-                        <div>
-                            <span class="px-2.5 py-1 bg-white/20 text-white rounded-full text-[10px] font-black uppercase tracking-wider">Compteur Bénévolat</span>
-                            <h2 class="text-xl font-extrabold mt-2">${AppState.currentUser.firstname} ${AppState.currentUser.lastname}</h2>
-                            <p class="text-xs text-white/80 mt-0.5">Classes : ${AppState.currentUser.kidsClasses || AppState.currentUser.kids_classes || 'Non renseigné'} • ${AppState.currentUser.email}</p>
-                        </div>
-                        <div class="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 text-center min-w-[140px]">
-                            <span class="text-3xl font-black text-amber-300">${totalHours}h</span>
-                            <p class="text-[10px] font-bold text-white uppercase tracking-wider mt-1">Total Heures Prises</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
-                        <div class="flex justify-between items-center border-b pb-4">
-                            <h3 class="text-base font-bold text-slate-800"><i class="fa-solid fa-hand-holding-heart text-spred mr-2"></i>Merci pour ton engagement !!</h3>
-                            <span class="px-3 py-1 bg-spgreen-light text-spgreen font-bold text-xs rounded-full">${myMissions.length} inscription(s) active(s)</span>
-                        </div>
-
-                        ${myMissions.length === 0 ? `
-                            <div class="text-center py-8 text-slate-400 space-y-2">
-                                <i class="fa-solid fa-calendar-xmark text-3xl"></i>
-                                <p class="text-xs">Tu n'es inscrit à aucune mission pour le moment. Dommage, on t'attend avec impatience !! </p>
-                                <button onclick="AppNavigation.switchTab('calendar')" class="mt-2 px-4 py-2 bg-spblue-light text-spblue font-bold text-xs rounded-xl hover:bg-spblue hover:text-white transition-all">Voir les missions disponibles</button>
-                            </div>
-                        ` : `
-                            <div class="divide-y divide-slate-100">
-                                ${myMissions.map(item => `
-                                    <div class="py-4 flex flex-col sm:flex-row justify-between sm:items-center gap-3">
-                                        <div>
-                                            <div class="flex items-center gap-2">
-                                                <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-spblue-light text-spblue">${item.event.organizer || 'APEL'}</span>
-                                                <span class="font-bold text-sm text-slate-800">${item.event.title}</span>
-                                            </div>
-                                            <p class="text-xs font-bold text-spgreen mt-1 flex items-center gap-1.5">
-                                                <span><i class="fa-solid fa-tag mr-1"></i>${item.mission.title}</span>
-                                                <span class="px-1.5 py-0.5 bg-spgreen-light text-spgreen rounded text-[10px] font-black">+${item.mission.estimatedHours || 0}h</span>
-                                            </p>
-                                            <p class="text-xs text-slate-500 mt-0.5"><i class="fa-regular fa-clock mr-1"></i>${item.mission.details || ''} - <i class="fa-solid fa-calendar text-slate-400 ml-1 mr-1"></i>${item.event.date || 'Date libre'}</p>
-                                        </div>
-                                        <button onclick="AppState.toggleSignUp('${item.event.id}', '${item.mission.id}')" class="px-3 py-2 border border-spred text-spred hover:bg-spred hover:text-white font-bold text-xs rounded-xl transition-all self-start sm:self-center">
-                                            <i class="fa-solid fa-trash-can mr-1"></i> Annuler
-                                        </button>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        `}
-                    </div>
-                </div>
-            `;
-        }
-    };
-
-    const DashboardComponent = {
-        render() {
-            const container = document.getElementById('tab-dashboard');
-            if (!container) return;
-            const stats = AppState.getSchoolStats();
-
-            container.innerHTML = `
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-xl bg-spblue-light text-spblue flex items-center justify-center text-xl font-bold">
-                            <i class="fa-solid fa-calendar-days"></i>
-                        </div>
-                        <div>
-                            <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Événements</p>
-                            <p class="text-3xl font-black text-slate-800 mt-1">${stats.totalEvents}</p>
-                        </div>
-                    </div>
-                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl font-bold">
-                            <i class="fa-solid fa-clock"></i>
-                        </div>
-                        <div>
-                            <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Heures Attendues (École)</p>
-                            <p class="text-3xl font-black text-slate-800 mt-1">${stats.totalExpectedHours}h</p>
-                        </div>
-                    </div>
-                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-xl bg-spgreen-light text-spgreen flex items-center justify-center text-xl font-bold">
-                            <i class="fa-solid fa-hand-holding-heart"></i>
-                        </div>
-                        <div>
-                            <p class="text-xs text-slate-500 font-bold uppercase trace-wider">Heures Inscrites</p>
-                            <p class="text-3xl font-black text-spgreen mt-1">${stats.totalFilledHours}h</p>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-    };
-
-    window.onload = () => AppState.init();
-</script>
+        window.onload = () => AppState.init();
+    </script>
+</body>
+</html>

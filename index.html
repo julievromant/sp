@@ -24,7 +24,7 @@
         }
     </script>
     
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-slate-50 text-slate-900 font-sans min-h-screen flex flex-col selection:bg-spblue selection:text-white">
 
@@ -59,7 +59,7 @@
                 <!-- Navigation Desktop -->
                 <nav class="hidden md:flex space-x-1 bg-slate-100 p-1.5 rounded-xl border border-slate-200">
                     <button onclick="AppNavigation.switchTab('school-year')" id="nav-school-year" class="nav-btn px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-white text-spblue shadow-sm">
-                        <i class="fa-solid fa-calendar-star mr-2 text-spgreen"></i>Planning Chronologique
+                        <i class="fa-solid fa-calendar-star mr-2 text-spgreen"></i>Planning
                     </button>
                     <button onclick="AppNavigation.switchTab('calendar')" id="nav-calendar" class="nav-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 transition-all">
                         <i class="fa-solid fa-list-check mr-2 text-spblue"></i>Missions & Inscriptions
@@ -68,7 +68,6 @@
                         <i class="fa-solid fa-hand-holding-heart mr-2 text-spred"></i>Mes Engagements
                         <span id="my-commitments-badge" class="ml-2 px-1.5 py-0.5 text-[10px] bg-spred text-white font-bold rounded-full hidden">0</span>
                     </button>
-                   
                 </nav>
 
                 <div class="flex items-center space-x-2 sm:space-x-3">
@@ -95,7 +94,6 @@
             <button onclick="MobileMenu.switchAndClose('my-commitments')" class="w-full text-left px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 flex items-center gap-2.5">
                 <i class="fa-solid fa-hand-holding-heart text-spred text-sm"></i> Mes Engagements
             </button>
-          
         </div>
     </header>
 
@@ -145,36 +143,45 @@
                     <h3 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-user-check text-spblue mr-2"></i>Espace Parent - Connexion Sécurisée</h3>
                     <button onclick="AuthModal.close()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
                 </div>
-                <p class="text-xs text-slate-500 mb-4">Saisissez votre email et votre mot de passe pour vous connecter via l'API sécurisée.</p>
+                <p class="text-xs text-slate-500 mb-4">Saisissez votre email. Si le compte existe, saisissez votre mot de passe. Sinon, remplissez vos informations pour créer votre compte.</p>
                 
                 <form onsubmit="AuthModal.submit(event)" class="space-y-3.5 text-xs">
                     <div>
                         <label class="block font-bold text-slate-700 uppercase mb-1">Adresse Email *</label>
                         <input type="email" id="login-email-input" required placeholder="ex: marie.dubois@gmail.com" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue">
                     </div>
-                    <div>
+                    
+                    <!-- Dynamic fields container based on email check -->
+                    <div id="auth-password-group" class="hidden">
                         <label class="block font-bold text-slate-700 uppercase mb-1">Mot de passe *</label>
-                        <input type="password" id="login-password" required placeholder="••••••••" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue">
+                        <input type="password" id="login-password" placeholder="••••••••" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue">
+                        <p id="auth-error-msg" class="text-spred font-semibold text-[11px] mt-1 hidden">Mot de passe incorrect.</p>
                     </div>
-                    <div class="space-y-3 pt-2 border-t border-slate-100">
-                        <p class="text-[11px] text-spblue font-semibold">Première visite ? Complétez ces informations :</p>
+
+                    <div id="auth-signup-group" class="hidden space-y-3 pt-2 border-t border-slate-100">
+                        <p class="text-[11px] text-spgreen font-semibold"><i class="fa-solid fa-user-plus mr-1"></i>Nouvel email détecté. Complétez vos informations :</p>
                         <div class="grid grid-cols-2 gap-3">
                             <div>
-                                <label class="block font-bold text-slate-700 uppercase mb-1">Prénom</label>
+                                <label class="block font-bold text-slate-700 uppercase mb-1">Prénom *</label>
                                 <input type="text" id="login-firstname" placeholder="ex: Marie" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue">
                             </div>
                             <div>
-                                <label class="block font-bold text-slate-700 uppercase mb-1">Nom</label>
+                                <label class="block font-bold text-slate-700 uppercase mb-1">Nom *</label>
                                 <input type="text" id="login-lastname" placeholder="ex: Dubois" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue">
                             </div>
                         </div>
                         <div>
-                            <label class="block font-bold text-slate-700 uppercase mb-1">Classe(s) des enfants</label>
+                            <label class="block font-bold text-slate-700 uppercase mb-1">Classe(s) des enfants *</label>
                             <input type="text" id="login-kids" placeholder="ex: TPS, CP, CM2" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue">
                         </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 uppercase mb-1">Créer un mot de passe *</label>
+                            <input type="password" id="signup-password" placeholder="••••••••" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue">
+                        </div>
                     </div>
-                    <button type="submit" class="w-full py-3 bg-spblue hover:bg-spblue-dark text-white font-bold text-xs rounded-xl shadow-sm transition-all mt-2">
-                        Se connecter / S'inscrire
+
+                    <button type="submit" id="auth-submit-btn" class="w-full py-3 bg-spblue hover:bg-spblue-dark text-white font-bold text-xs rounded-xl shadow-sm transition-all mt-2">
+                        Continuer
                     </button>
                 </form>
             </div>
@@ -316,17 +323,102 @@
         };
 
         const AuthModal = {
-            open() { document.getElementById('auth-modal').classList.remove('hidden'); },
-            close() { document.getElementById('auth-modal').classList.add('hidden'); },
+            checkedEmail: null,
+            open() { 
+                this.resetForm();
+                document.getElementById('auth-modal').classList.remove('hidden'); 
+            },
+            close() { 
+                document.getElementById('auth-modal').classList.add('hidden'); 
+                this.resetForm();
+            },
+            resetForm() {
+                this.checkedEmail = null;
+                const emailInput = document.getElementById('login-email-input');
+                if (emailInput) emailInput.value = '';
+                emailInput.disabled = false;
+                
+                const pwdGroup = document.getElementById('auth-password-group');
+                const signupGroup = document.getElementById('auth-signup-group');
+                const errMsg = document.getElementById('auth-error-msg');
+                const submitBtn = document.getElementById('auth-submit-btn');
+
+                if (pwdGroup) pwdGroup.classList.add('hidden');
+                if (signupGroup) signupGroup.classList.add('hidden');
+                if (errMsg) errMsg.classList.add('hidden');
+                if (submitBtn) submitBtn.innerText = "Continuer";
+            },
             async submit(e) {
                 e.preventDefault();
-                const email = document.getElementById('login-email-input').value.trim();
-                const password = document.getElementById('login-password').value;
-                const firstname = document.getElementById('login-firstname').value.trim();
-                const lastname = document.getElementById('login-lastname').value.trim();
-                const kidsClasses = document.getElementById('login-kids').value.trim();
+                const emailInput = document.getElementById('login-email-input');
+                const email = emailInput.value.trim().toLowerCase();
 
-                await AppState.login({ email, password, firstname, lastname, kidsClasses });
+                // Etape 1 : Si l'email n'a pas encore été vérifié dans la base de données
+                if (!this.checkedEmail) {
+                    if (!email) return;
+                    const exists = await SecureBackendService.checkEmailExists(email);
+                    this.checkedEmail = email;
+                    emailInput.disabled = true;
+
+                    const pwdGroup = document.getElementById('auth-password-group');
+                    const signupGroup = document.getElementById('auth-signup-group');
+                    const submitBtn = document.getElementById('auth-submit-btn');
+
+                    if (exists) {
+                        // L'email existe : demander le mot de passe
+                        pwdGroup.classList.remove('hidden');
+                        signupGroup.classList.add('hidden');
+                        submitBtn.innerText = "Se connecter";
+                    } else {
+                        // L'email n'existe pas : proposer de saisir les informations de création de compte
+                        pwdGroup.classList.add('hidden');
+                        signupGroup.classList.remove('hidden');
+                        document.getElementById('login-firstname').required = true;
+                        document.getElementById('login-lastname').required = true;
+                        document.getElementById('login-kids').required = true;
+                        document.getElementById('signup-password').required = true;
+                        submitBtn.innerText = "Créer mon compte et me connecter";
+                    }
+                    return;
+                }
+
+                // Etape 2 : Traitement de la connexion ou de l'inscription
+                const exists = await SecureBackendService.checkEmailExists(this.checkedEmail);
+                if (exists) {
+                    // Vérification du mot de passe
+                    const password = document.getElementById('login-password').value;
+                    const res = await SecureBackendService.login({ email: this.checkedEmail, password, isLogin: true });
+                    if (res.status === 'error') {
+                        const errMsg = document.getElementById('auth-error-msg');
+                        if (errMsg) {
+                            errMsg.innerText = res.message || "Mot de passe incorrect.";
+                            errMsg.classList.remove('hidden');
+                        }
+                        UIUtils.showToast("Mot de passe incorrect.", "error");
+                        return;
+                    }
+                    AppState.setCurrentUser(res.user);
+                } else {
+                    // Inscription nouveau compte
+                    const firstname = document.getElementById('login-firstname').value.trim();
+                    const lastname = document.getElementById('login-lastname').value.trim();
+                    const kidsClasses = document.getElementById('login-kids').value.trim();
+                    const password = document.getElementById('signup-password').value;
+
+                    const res = await SecureBackendService.login({ 
+                        email: this.checkedEmail, 
+                        password, 
+                        firstname, 
+                        lastname, 
+                        kidsClasses, 
+                        isLogin: false 
+                    });
+                    if (res.status === 'error') {
+                        UIUtils.showToast(res.message || "Erreur lors de la création du compte", "error");
+                        return;
+                    }
+                    AppState.setCurrentUser(res.user);
+                }
             }
         };
 
@@ -389,10 +481,9 @@
                     if (!response.ok) {
                         throw new Error(`Erreur réseau sécurisée (${response.status})`);
                     }
-                    const result = await response.json();
-                    return result;
+                    return await response.json();
                 } catch (e) {
-                    console.warn("API sécurisée injoignable, bascule vers le mode de secours local:", e);
+                    console.warn("API sécurisée injoignable, bascule vers le stockage local intelligent:", e);
                     return this.getFallbackResponse(action, payload);
                 }
             },
@@ -400,7 +491,8 @@
             async getData() {
                 const res = await this.callApi('get_data');
                 if (res && res.events) {
-                    const admins = (res.users || []).filter(u => u.is_admin).map(u => u.email);
+                    const users = res.users || [];
+                    const admins = users.filter(u => u.is_admin).map(u => u.email);
                     return {
                         events: (res.events || []).map(e => ({
                             id: e.id,
@@ -414,10 +506,21 @@
                             missions: e.missions || []
                         })),
                         admins: admins.length > 0 ? admins : ["marie.parent@apel.fr"],
-                        users: res.users || []
+                        users: users
                     };
                 }
                 return this.getFallbackData();
+            },
+
+            async checkEmailExists(email) {
+                const res = await this.callApi('check_email', { email });
+                if (res && typeof res.exists === 'boolean') {
+                    return res.exists;
+                }
+                // Mode de secours local
+                const localUsers = JSON.parse(localStorage.getItem('scolar_local_users') || '[]');
+                const found = localUsers.some(u => u.email.toLowerCase() === email.toLowerCase()) || email.toLowerCase() === 'marie.parent@apel.fr';
+                return found;
             },
 
             async saveEvent(event) {
@@ -429,22 +532,44 @@
             },
 
             async login(payload) {
-                const res = await this.callApi('login', payload);
-                if (res && res.status === 'success') {
+                const res = await this.callApi('login_auth', payload);
+                if (res && res.status) {
                     return res;
                 }
+                
+                // Mode de secours local intelligent
                 const email = payload.email.trim().toLowerCase();
-                const isAdmin = email === 'marie.parent@apel.fr';
-                return {
-                    status: 'success',
-                    user: {
-                        email: email,
-                        firstname: payload.firstname || (isAdmin ? 'Administrateur' : 'Parent'),
-                        lastname: payload.lastname || (isAdmin ? 'APEL' : 'Bénévole'),
-                        kids_classes: payload.kidsClasses || (isAdmin ? 'Bureau' : 'CP'),
-                        is_admin: isAdmin
+                let localUsers = JSON.parse(localStorage.getItem('scolar_local_users') || '[]');
+                let userRecord = localUsers.find(u => u.email.toLowerCase() === email);
+
+                if (payload.isLogin) {
+                    if (email === 'marie.parent@apel.fr') {
+                        return {
+                            status: 'success',
+                            user: { email, firstname: 'Marie', lastname: 'Parent', kids_classes: 'Bureau APEL', is_admin: true }
+                        };
                     }
-                };
+                    if (!userRecord || userRecord.password !== payload.password) {
+                        return { status: 'error', message: 'Mot de passe incorrect.' };
+                    }
+                    return { status: 'success', user: userRecord };
+                } else {
+                    // Création de compte
+                    if (userRecord) {
+                        return { status: 'error', message: 'Cet email existe déjà.' };
+                    }
+                    const newUser = {
+                        email: email,
+                        password: payload.password,
+                        firstname: payload.firstname,
+                        lastname: payload.lastname,
+                        kids_classes: payload.kidsClasses,
+                        is_admin: email === 'marie.parent@apel.fr'
+                    };
+                    localUsers.push(newUser);
+                    localStorage.setItem('scolar_local_users', JSON.stringify(localUsers));
+                    return { status: 'success', user: newUser };
+                }
             },
 
             getFallbackData() {
@@ -469,6 +594,11 @@
 
             getFallbackResponse(action, payload) {
                 if (action === 'get_data') return this.getFallbackData();
+                if (action === 'check_email') {
+                    const localUsers = JSON.parse(localStorage.getItem('scolar_local_users') || '[]');
+                    const exists = localUsers.some(u => u.email.toLowerCase() === payload.email.toLowerCase()) || payload.email.toLowerCase() === 'marie.parent@apel.fr';
+                    return { exists };
+                }
                 return { status: 'success' };
             }
         };
@@ -489,7 +619,7 @@
 
             isAdmin() {
                 if (!this.currentUser || !this.currentUser.email) return false;
-                return this.admins.map(a => a.toLowerCase()).includes(this.currentUser.email.toLowerCase());
+                return this.admins.map(a => a.toLowerCase()).includes(this.currentUser.email.toLowerCase()) || this.currentUser.is_admin;
             },
 
             getUserTotalHours() {
@@ -520,18 +650,12 @@
                 return { totalEvents: this.events.length, totalExpectedHours, totalFilledHours };
             },
 
-            async login(userData) {
-                const res = await SecureBackendService.login(userData);
-                if (res.status === 'error') {
-                    UIUtils.showToast(res.message || "Erreur de connexion", "error");
-                    return;
-                }
-                const userObj = res.user || userData;
+            setCurrentUser(userObj) {
                 this.currentUser = { 
                     ...userObj, 
-                    firstname: userData.firstname || userObj.firstname || 'Parent', 
-                    lastname: userData.lastname || userObj.lastname || 'Bénévole', 
-                    kidsClasses: userData.kidsClasses || userObj.kids_classes || 'CP' 
+                    firstname: userObj.firstname || 'Parent', 
+                    lastname: userObj.lastname || 'Bénévole', 
+                    kidsClasses: userObj.kidsClasses || userObj.kids_classes || 'CP' 
                 };
                 localStorage.setItem('scolar_current_user', JSON.stringify(this.currentUser));
                 UIUtils.showToast(`Bienvenue, ${this.currentUser.firstname} !`);
@@ -733,7 +857,6 @@
                                     ${monthEvents.map(evt => `
                                         <div class="bg-white/90 backdrop-blur-xs p-2.5 rounded-xl border border-white/60 shadow-2xs space-y-1">
                                             <div class="flex items-center justify-between">
-                                                <!-- Modification couleur plus douce pour les dates jalon (Jour J) -->
                                                 <span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-200 flex items-center gap-1">
                                                     <i class="fa-solid fa-flag text-[8px] text-rose-400"></i> ${evt.date ? evt.date.split('-').reverse().join('/') : 'Jour J'}
                                                 </span>
@@ -777,10 +900,8 @@
                     return;
                 }
 
-                // Filtrer les événements pour n'afficher que ceux qui possèdent au moins une mission disponible
                 const filteredEvents = AppState.events.map(evt => {
                     const missions = evt.missions || [];
-                    // Filtrage des missions uniquement disponibles (places restantes > 0 ou l'utilisateur y est déjà inscrit)
                     const availableMissions = missions.filter(m => {
                         const maxV = m.maxVolunteers || 2;
                         const countV = (m.volunteers || []).length;
@@ -898,7 +1019,7 @@
                             <div>
                                 <span class="px-2.5 py-1 bg-white/20 text-white rounded-full text-[10px] font-black uppercase tracking-wider">Compteur Bénévolat</span>
                                 <h2 class="text-xl font-extrabold mt-2">${AppState.currentUser.firstname} ${AppState.currentUser.lastname}</h2>
-                                <p class="text-xs text-white/80 mt-0.5">Classes : ${AppState.currentUser.kidsClasses || 'Non renseigné'} • ${AppState.currentUser.email}</p>
+                                <p class="text-xs text-white/80 mt-0.5">Classes : ${AppState.currentUser.kidsClasses || AppState.currentUser.kids_classes || 'Non renseigné'} • ${AppState.currentUser.email}</p>
                             </div>
                             <div class="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 text-center min-w-[140px]">
                                 <span class="text-3xl font-black text-amber-300">${totalHours}h</span>

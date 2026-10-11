@@ -511,6 +511,7 @@
         ];
 
         // SERVICE SUPABASE ROBUSTE AVEC MODE LOCAL AUTOMATIQUE DE SECOURS
+       // SERVICE SUPABASE MIS À JOUR POUR CORRESPONDRE À VOTRE TABLE USERS
         const SupabaseService = {
             async checkEmailExists(email) {
                 if (supabaseClient) {
@@ -540,7 +541,8 @@
                             .maybeSingle();
                         
                         if (error || !data) return { status: 'error', message: 'Utilisateur introuvable.' };
-                        if (data.password !== password) return { status: 'error', message: 'Mot de passe incorrect.' };
+                        // Utilisation de password_hash au lieu de password
+                        if (data.password_hash !== password) return { status: 'error', message: 'Mot de passe incorrect.' };
                         return { status: 'success', user: data };
                     } catch (e) {
                         console.warn("Erreur Supabase login:", e);
@@ -555,7 +557,7 @@
                 }
                 const localUsers = JSON.parse(localStorage.getItem('sp_local_users') || '[]');
                 const user = localUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
-                if (!user || user.password !== password) {
+                if (!user || user.password_hash !== password) {
                     return { status: 'error', message: 'Mot de passe incorrect.' };
                 }
                 return { status: 'success', user };
@@ -564,7 +566,7 @@
             async registerUser(userData) {
                 const newUser = {
                     email: userData.email,
-                    password: userData.password,
+                    password_hash: userData.password, // Stocké dans password_hash
                     firstname: userData.firstname,
                     lastname: userData.lastname,
                     kids_classes: userData.kids_classes,

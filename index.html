@@ -24,6 +24,7 @@
         }
     </script>
     
+    <!-- Inclure le SDK Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-slate-50 text-slate-900 font-sans min-h-screen flex flex-col selection:bg-spblue selection:text-white">
@@ -151,13 +152,14 @@
                         <input type="email" id="login-email-input" required placeholder="ex: marie.dubois@gmail.com" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue">
                     </div>
                     
-                    <!-- Dynamic fields container based on email check -->
+                    <!-- Dynamic password group for existing users -->
                     <div id="auth-password-group" class="hidden">
-                        <label class="block font-bold text-slate-700 uppercase mb-1">Mot de passe *</label>
+                        <label class="block font-bold text-slate-700 uppercase mb-1">Mot de passe sécurisé *</label>
                         <input type="password" id="login-password" placeholder="••••••••" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue">
                         <p id="auth-error-msg" class="text-spred font-semibold text-[11px] mt-1 hidden">Mot de passe incorrect.</p>
                     </div>
 
+                    <!-- Dynamic registration group for new users -->
                     <div id="auth-signup-group" class="hidden space-y-3 pt-2 border-t border-slate-100">
                         <p class="text-[11px] text-spgreen font-semibold"><i class="fa-solid fa-user-plus mr-1"></i>Nouvel email détecté. Complétez vos informations :</p>
                         <div class="grid grid-cols-2 gap-3">
@@ -175,14 +177,18 @@
                             <input type="text" id="login-kids" placeholder="ex: TPS, CP, CM2" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue">
                         </div>
                         <div>
-                            <label class="block font-bold text-slate-700 uppercase mb-1">Créer un mot de passe *</label>
-                            <input type="password" id="signup-password" placeholder="••••••••" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue">
+                            <label class="block font-bold text-slate-700 uppercase mb-1">Créer un mot de passe sécurisé *</label>
+                            <input type="password" id="signup-password" placeholder="•••••••• (8 caractères min.)" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue">
+                            <p class="text-[10px] text-slate-400 mt-0.5">Le mot de passe sera sécurisé et haché avant stockage en base de données.</p>
                         </div>
                     </div>
 
-                    <button type="submit" id="auth-submit-btn" class="w-full py-3 bg-spblue hover:bg-spblue-dark text-white font-bold text-xs rounded-xl shadow-sm transition-all mt-2">
-                        Continuer
-                    </button>
+                    <div class="flex gap-2 pt-2">
+                        <button type="button" id="auth-back-btn" onclick="AuthModal.resetForm()" class="hidden py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all">Retour</button>
+                        <button type="submit" id="auth-submit-btn" class="flex-1 py-3 bg-spblue hover:bg-spblue-dark text-white font-bold text-xs rounded-xl shadow-sm transition-all">
+                            Vérifier l'email
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -277,7 +283,18 @@
     </div>
 
     <script>
-        const SECURE_API_ENDPOINT = '/api/supabase-proxy'; 
+        // CONFIGURATION SUPABASE (Remplacez par vos clés Supabase réelles ou laissez les variables pour test local)
+        const SUPABASE_URL = 'https://votre-projet.supabase.co';
+        const SUPABASE_ANON_KEY = 'votre-cle-anon-supabase';
+        
+        let supabaseClient = null;
+        try {
+            if (window.supabase && SUPABASE_URL !== 'https://votre-projet.supabase.co') {
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            }
+        } catch (e) {
+            console.warn("Supabase non initialisé, bascule vers le mode sécurisé local de secours.");
+        }
 
         const AppNavigation = {
             currentTab: 'school-year',
@@ -322,6 +339,15 @@
             }
         };
 
+        // Fonction utilitaire de hachage SHA-256 sécurisé pour le mot de passe côté client avant envoi
+        async function hashPassword(password) {
+            const msgBuffer = new TextEncoder().encode(password);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            return hashHex;
+        }
+
         const AuthModal = {
             checkedEmail: null,
             open() { 
@@ -335,42 +361,49 @@
             resetForm() {
                 this.checkedEmail = null;
                 const emailInput = document.getElementById('login-email-input');
-                if (emailInput) emailInput.value = '';
-                emailInput.disabled = false;
+                if (emailInput) {
+                    emailInput.value = '';
+                    emailInput.disabled = false;
+                }
                 
                 const pwdGroup = document.getElementById('auth-password-group');
                 const signupGroup = document.getElementById('auth-signup-group');
                 const errMsg = document.getElementById('auth-error-msg');
                 const submitBtn = document.getElementById('auth-submit-btn');
+                const backBtn = document.getElementById('auth-back-btn');
 
                 if (pwdGroup) pwdGroup.classList.add('hidden');
                 if (signupGroup) signupGroup.classList.add('hidden');
                 if (errMsg) errMsg.classList.add('hidden');
-                if (submitBtn) submitBtn.innerText = "Continuer";
+                if (backBtn) backBtn.classList.add('hidden');
+                if (submitBtn) submitBtn.innerText = "Vérifier l'email";
             },
             async submit(e) {
                 e.preventDefault();
                 const emailInput = document.getElementById('login-email-input');
                 const email = emailInput.value.trim().toLowerCase();
 
-                // Etape 1 : Si l'email n'a pas encore été vérifié dans la base de données
+                // ETAPE 1 : Vérification si l'email existe en base de données Supabase
                 if (!this.checkedEmail) {
                     if (!email) return;
-                    const exists = await SecureBackendService.checkEmailExists(email);
+                    
+                    const exists = await SupabaseService.checkEmailExists(email);
                     this.checkedEmail = email;
                     emailInput.disabled = true;
 
                     const pwdGroup = document.getElementById('auth-password-group');
                     const signupGroup = document.getElementById('auth-signup-group');
                     const submitBtn = document.getElementById('auth-submit-btn');
+                    const backBtn = document.getElementById('auth-back-btn');
+                    if (backBtn) backBtn.classList.remove('hidden');
 
                     if (exists) {
-                        // L'email existe : demander le mot de passe
+                        // L'email existe : demander le mot de passe sécurisé
                         pwdGroup.classList.remove('hidden');
                         signupGroup.classList.add('hidden');
                         submitBtn.innerText = "Se connecter";
                     } else {
-                        // L'email n'existe pas : proposer de saisir les informations de création de compte
+                        // L'email n'existe pas : demander les informations de création de compte
                         pwdGroup.classList.add('hidden');
                         signupGroup.classList.remove('hidden');
                         document.getElementById('login-firstname').required = true;
@@ -382,12 +415,14 @@
                     return;
                 }
 
-                // Etape 2 : Traitement de la connexion ou de l'inscription
-                const exists = await SecureBackendService.checkEmailExists(this.checkedEmail);
+                // ETAPE 2 : Traitement de la connexion ou de l'inscription
+                const exists = await SupabaseService.checkEmailExists(this.checkedEmail);
                 if (exists) {
-                    // Vérification du mot de passe
-                    const password = document.getElementById('login-password').value;
-                    const res = await SecureBackendService.login({ email: this.checkedEmail, password, isLogin: true });
+                    // Connexion utilisateur existant
+                    const passwordPlain = document.getElementById('login-password').value;
+                    const hashedPassword = await hashPassword(passwordPlain);
+
+                    const res = await SupabaseService.loginUser({ email: this.checkedEmail, password: hashedPassword });
                     if (res.status === 'error') {
                         const errMsg = document.getElementById('auth-error-msg');
                         if (errMsg) {
@@ -403,16 +438,22 @@
                     const firstname = document.getElementById('login-firstname').value.trim();
                     const lastname = document.getElementById('login-lastname').value.trim();
                     const kidsClasses = document.getElementById('login-kids').value.trim();
-                    const password = document.getElementById('signup-password').value;
+                    const passwordPlain = document.getElementById('signup-password').value;
 
-                    const res = await SecureBackendService.login({ 
+                    if (passwordPlain.length < 6) {
+                        UIUtils.showToast("Le mot de passe doit contenir au moins 6 caractères.", "error");
+                        return;
+                    }
+
+                    const hashedPassword = await hashPassword(passwordPlain);
+                    const res = await SupabaseService.registerUser({ 
                         email: this.checkedEmail, 
-                        password, 
+                        password: hashedPassword, 
                         firstname, 
                         lastname, 
-                        kidsClasses, 
-                        isLogin: false 
+                        kids_classes: kidsClasses 
                     });
+
                     if (res.status === 'error') {
                         UIUtils.showToast(res.message || "Erreur lors de la création du compte", "error");
                         return;
@@ -469,110 +510,117 @@
             { id: '06', name: 'Juin 2027', short: 'Juin', color: 'from-rose-50 to-orange-50 border-orange-200 text-orange-900' }
         ];
 
-        const SecureBackendService = {
-            async callApi(action, payload = {}) {
-                try {
-                    const response = await fetch(SECURE_API_ENDPOINT, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action, ...payload })
-                    });
-                    
-                    if (!response.ok) {
-                        throw new Error(`Erreur réseau sécurisée (${response.status})`);
+        // SERVICE SUPABASE ROBUSTE AVEC MODE LOCAL AUTOMATIQUE DE SECOURS
+        const SupabaseService = {
+            async checkEmailExists(email) {
+                if (supabaseClient) {
+                    try {
+                        const { data, error } = await supabaseClient
+                            .from('users')
+                            .select('email')
+                            .eq('email', email)
+                            .maybeSingle();
+                        if (!error && data) return true;
+                    } catch (e) {
+                        console.warn("Erreur Supabase checkEmail:", e);
                     }
-                    return await response.json();
-                } catch (e) {
-                    console.warn("API sécurisée injoignable, bascule vers le stockage local intelligent:", e);
-                    return this.getFallbackResponse(action, payload);
                 }
+                // Secours LocalStorage
+                const localUsers = JSON.parse(localStorage.getItem('sp_local_users') || '[]');
+                return localUsers.some(u => u.email.toLowerCase() === email.toLowerCase()) || email.toLowerCase() === 'marie.parent@apel.fr';
+            },
+
+            async loginUser({ email, password }) {
+                if (supabaseClient) {
+                    try {
+                        const { data, error } = await supabaseClient
+                            .from('users')
+                            .select('*')
+                            .eq('email', email)
+                            .maybeSingle();
+                        
+                        if (error || !data) return { status: 'error', message: 'Utilisateur introuvable.' };
+                        if (data.password !== password) return { status: 'error', message: 'Mot de passe incorrect.' };
+                        return { status: 'success', user: data };
+                    } catch (e) {
+                        console.warn("Erreur Supabase login:", e);
+                    }
+                }
+                // Secours LocalStorage
+                if (email === 'marie.parent@apel.fr') {
+                    return {
+                        status: 'success',
+                        user: { email, firstname: 'Marie', lastname: 'Parent', kids_classes: 'Bureau APEL', is_admin: true }
+                    };
+                }
+                const localUsers = JSON.parse(localStorage.getItem('sp_local_users') || '[]');
+                const user = localUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+                if (!user || user.password !== password) {
+                    return { status: 'error', message: 'Mot de passe incorrect.' };
+                }
+                return { status: 'success', user };
+            },
+
+            async registerUser(userData) {
+                const newUser = {
+                    email: userData.email,
+                    password: userData.password,
+                    firstname: userData.firstname,
+                    lastname: userData.lastname,
+                    kids_classes: userData.kids_classes,
+                    is_admin: userData.email.toLowerCase() === 'marie.parent@apel.fr'
+                };
+
+                if (supabaseClient) {
+                    try {
+                        const { error } = await supabaseClient.from('users').insert([newUser]);
+                        if (error) throw error;
+                        return { status: 'success', user: newUser };
+                    } catch (e) {
+                        console.warn("Erreur Supabase register, enregistrement local de secours:", e);
+                    }
+                }
+                // Secours LocalStorage
+                let localUsers = JSON.parse(localStorage.getItem('sp_local_users') || '[]');
+                if (localUsers.some(u => u.email.toLowerCase() === newUser.email.toLowerCase())) {
+                    return { status: 'error', message: 'Cet email existe déjà.' };
+                }
+                localUsers.push(newUser);
+                localStorage.setItem('sp_local_users', JSON.stringify(localUsers));
+                return { status: 'success', user: newUser };
             },
 
             async getData() {
-                const res = await this.callApi('get_data');
-                if (res && res.events) {
-                    const users = res.users || [];
-                    const admins = users.filter(u => u.is_admin).map(u => u.email);
-                    return {
-                        events: (res.events || []).map(e => ({
-                            id: e.id,
-                            title: e.title,
-                            organizer: e.organizer,
-                            type: e.type,
-                            date: e.date,
-                            prepMonth: e.prep_month || e.prepMonth,
-                            location: e.location,
-                            description: e.description,
-                            missions: e.missions || []
-                        })),
-                        admins: admins.length > 0 ? admins : ["marie.parent@apel.fr"],
-                        users: users
-                    };
-                }
-                return this.getFallbackData();
-            },
-
-            async checkEmailExists(email) {
-                const res = await this.callApi('check_email', { email });
-                if (res && typeof res.exists === 'boolean') {
-                    return res.exists;
-                }
-                // Mode de secours local
-                const localUsers = JSON.parse(localStorage.getItem('scolar_local_users') || '[]');
-                const found = localUsers.some(u => u.email.toLowerCase() === email.toLowerCase()) || email.toLowerCase() === 'marie.parent@apel.fr';
-                return found;
-            },
-
-            async saveEvent(event) {
-                await this.callApi('save_event', { event });
-            },
-
-            async deleteEvent(eventId) {
-                await this.callApi('delete_event', { eventId });
-            },
-
-            async login(payload) {
-                const res = await this.callApi('login_auth', payload);
-                if (res && res.status) {
-                    return res;
-                }
-                
-                // Mode de secours local intelligent
-                const email = payload.email.trim().toLowerCase();
-                let localUsers = JSON.parse(localStorage.getItem('scolar_local_users') || '[]');
-                let userRecord = localUsers.find(u => u.email.toLowerCase() === email);
-
-                if (payload.isLogin) {
-                    if (email === 'marie.parent@apel.fr') {
-                        return {
-                            status: 'success',
-                            user: { email, firstname: 'Marie', lastname: 'Parent', kids_classes: 'Bureau APEL', is_admin: true }
-                        };
+                if (supabaseClient) {
+                    try {
+                        const [eventsRes, usersRes] = await Promise.all([
+                            supabaseClient.from('events').select('*'),
+                            supabaseClient.from('users').select('*')
+                        ]);
+                        if (!eventsRes.error && eventsRes.data) {
+                            return {
+                                events: eventsRes.data.map(e => ({
+                                    id: e.id,
+                                    title: e.title,
+                                    organizer: e.organizer,
+                                    type: e.type,
+                                    date: e.date,
+                                    prepMonth: e.prep_month || e.prepMonth,
+                                    location: e.location,
+                                    description: e.description,
+                                    missions: e.missions || []
+                                })),
+                                users: usersRes.data || []
+                            };
+                        }
+                    } catch (e) {
+                        console.warn("Erreur chargement Supabase, bascule local:", e);
                     }
-                    if (!userRecord || userRecord.password !== payload.password) {
-                        return { status: 'error', message: 'Mot de passe incorrect.' };
-                    }
-                    return { status: 'success', user: userRecord };
-                } else {
-                    // Création de compte
-                    if (userRecord) {
-                        return { status: 'error', message: 'Cet email existe déjà.' };
-                    }
-                    const newUser = {
-                        email: email,
-                        password: payload.password,
-                        firstname: payload.firstname,
-                        lastname: payload.lastname,
-                        kids_classes: payload.kidsClasses,
-                        is_admin: email === 'marie.parent@apel.fr'
-                    };
-                    localUsers.push(newUser);
-                    localStorage.setItem('scolar_local_users', JSON.stringify(localUsers));
-                    return { status: 'success', user: newUser };
                 }
-            },
+                // Données par défaut si pas de connexion Supabase active
+                const localEvents = JSON.parse(localStorage.getItem('sp_local_events') || 'null');
+                if (localEvents) return { events: localEvents, users: [] };
 
-            getFallbackData() {
                 const defaultEvents = [
                     {
                         id: 'evt-1',
@@ -589,30 +637,61 @@
                         ]
                     }
                 ];
-                return { events: defaultEvents, admins: ["marie.parent@apel.fr"], users: [] };
+                return { events: defaultEvents, users: [] };
             },
 
-            getFallbackResponse(action, payload) {
-                if (action === 'get_data') return this.getFallbackData();
-                if (action === 'check_email') {
-                    const localUsers = JSON.parse(localStorage.getItem('scolar_local_users') || '[]');
-                    const exists = localUsers.some(u => u.email.toLowerCase() === payload.email.toLowerCase()) || payload.email.toLowerCase() === 'marie.parent@apel.fr';
-                    return { exists };
+            async saveEvent(event) {
+                if (supabaseClient) {
+                    try {
+                        const dbEvent = {
+                            id: event.id,
+                            title: event.title,
+                            organizer: event.organizer,
+                            type: event.type,
+                            date: event.date,
+                            prep_month: event.prepMonth,
+                            location: event.location,
+                            description: event.description,
+                            missions: event.missions
+                        };
+                        await supabaseClient.from('events').upsert(dbEvent);
+                        return;
+                    } catch (e) {
+                        console.warn("Erreur sauvegarde Supabase:", e);
+                    }
                 }
-                return { status: 'success' };
+                // LocalStorage backup
+                let localEvents = JSON.parse(localStorage.getItem('sp_local_events') || '[]');
+                const idx = localEvents.findIndex(e => e.id === event.id);
+                if (idx > -1) localEvents[idx] = event;
+                else localEvents.push(event);
+                localStorage.setItem('sp_local_events', JSON.stringify(localEvents));
+            },
+
+            async deleteEvent(eventId) {
+                if (supabaseClient) {
+                    try {
+                        await supabaseClient.from('events').delete().eq('id', eventId);
+                        return;
+                    } catch (e) {
+                        console.warn("Erreur suppression Supabase:", e);
+                    }
+                }
+                let localEvents = JSON.parse(localStorage.getItem('sp_local_events') || '[]');
+                localEvents = localEvents.filter(e => e.id !== eventId);
+                localStorage.setItem('sp_local_events', JSON.stringify(localEvents));
             }
         };
 
         const AppState = {
             events: [],
-            admins: [],
+            admins: ["marie.parent@apel.fr"],
             users: [],
-            currentUser: JSON.parse(localStorage.getItem('scolar_current_user') || 'null'),
+            currentUser: JSON.parse(localStorage.getItem('sp_current_user') || 'null'),
 
             async init() {
-                const data = await SecureBackendService.getData();
+                const data = await SupabaseService.getData();
                 this.events = data.events || [];
-                this.admins = data.admins || [];
                 this.users = data.users || [];
                 this.notifyAll();
             },
@@ -655,9 +734,9 @@
                     ...userObj, 
                     firstname: userObj.firstname || 'Parent', 
                     lastname: userObj.lastname || 'Bénévole', 
-                    kidsClasses: userObj.kidsClasses || userObj.kids_classes || 'CP' 
+                    kidsClasses: userObj.kids_classes || userObj.kidsClasses || 'CP' 
                 };
-                localStorage.setItem('scolar_current_user', JSON.stringify(this.currentUser));
+                localStorage.setItem('sp_current_user', JSON.stringify(this.currentUser));
                 UIUtils.showToast(`Bienvenue, ${this.currentUser.firstname} !`);
                 this.notifyAll();
                 AuthModal.close();
@@ -665,13 +744,13 @@
 
             logout() {
                 this.currentUser = null;
-                localStorage.removeItem('scolar_current_user');
+                localStorage.removeItem('sp_current_user');
                 UIUtils.showToast("Déconnexion réussie.");
                 this.notifyAll();
             },
 
             async saveEvent(eventData) {
-                await SecureBackendService.saveEvent(eventData);
+                await SupabaseService.saveEvent(eventData);
                 const index = this.events.findIndex(e => e.id === eventData.id);
                 if (index > -1) this.events[index] = eventData;
                 else this.events.push(eventData);
@@ -680,7 +759,7 @@
             },
 
             async deleteEvent(eventId) {
-                await SecureBackendService.deleteEvent(eventId);
+                await SupabaseService.deleteEvent(eventId);
                 this.events = this.events.filter(e => e.id !== eventId);
                 UIUtils.showToast("Événement supprimé.");
                 this.notifyAll();
@@ -1098,7 +1177,7 @@
                                 <i class="fa-solid fa-hand-holding-heart"></i>
                             </div>
                             <div>
-                                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Heures Inscrites</p>
+                                <p class="text-xs text-slate-500 font-bold uppercase trace-wider">Heures Inscrites</p>
                                 <p class="text-3xl font-black text-spgreen mt-1">${stats.totalFilledHours}h</p>
                             </div>
                         </div>

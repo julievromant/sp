@@ -3,8 +3,19 @@ import { createClient } from '@supabase/supabase-js';
 export async function onRequestPost(context) {
     const { request, env } = context;
 
+    // Vérification initiale des variables d'environnement Supabase
+    if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
+        return new Response(JSON.stringify({ 
+            status: 'error', 
+            message: 'Configuration serveur incomplète : SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY manquant dans les variables d’environnement Cloudflare Pages.' 
+        }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        });
+    }
+
     try {
-        const body = await request.json();
+        const body = await request.json().catch(() => ({}));
         const { action, ...payload } = body;
         let result = { status: 'success' };
 
@@ -14,8 +25,10 @@ export async function onRequestPost(context) {
             case 'get_data': {
                 const { data: events, error: evErr } = await supabase.from('events').select('*');
                 if (evErr) console.error("Erreur lecture events:", evErr);
+                
                 const { data: users, error: usErr } = await supabase.from('users').select('*');
                 if (usErr) console.error("Erreur lecture users:", usErr);
+                
                 result = { events: events || [], users: users || [] };
                 break;
             }
@@ -70,8 +83,8 @@ export async function onRequestPost(context) {
                 });
 
                 if (error) {
-                    console.error("Erreur Supabase signInWithOtp:", error);
-                    throw new Error(error.message);
+                    console.error("Erreur Supabase signInWithOtp détaillée:", JSON.stringify(error, null, 2));
+                    throw new Error(error.message + (error.status ? ` (Status: ${error.status})` : ''));
                 }
                 result = { status: 'success', message: 'Lien magique envoyé avec succès.' };
                 break;
@@ -79,15 +92,34 @@ export async function onRequestPost(context) {
 
             case 'verify_magic_link': {
                 const code = payload.code;
-                if (!code) throw new Error("Code d'authentification manquant dans la requête.");
+                const hash = payload.hash;
 
-                const { data: sessionData, error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
-                if (sessionError || !sessionData || !sessionData.user) {
-                    console.error("Erreur exchangeCodeForSession:", sessionError);
-                    throw new Error(sessionError?.message || "Impossible d'échanger le code contre une session Supabase.");
+                if (!code && (!hash || !hash.includes('access_token'))) {
+                    throw new Error("Paramètres d'authentification manquants (ni code PKCE ni token hash trouvés).");
                 }
 
-                const authUser = sessionData.user;
+                let authUser = null;
+
+                if (code) {
+                    const { data: sessionData, error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
+                    if (sessionError || !sessionData || !sessionData.user) {
+                        console.error("Erreur exchangeCodeForSession détaillée:", JSON.stringify(sessionError, null, 2));
+                        throw new Error(sessionError?.message || "Échec de l'échange du code PKCE contre une session.");
+                    }
+                    authUser = sessionData.user;
+                } else if (hash) {
+                    const params = new URLSearchParams(hash.replace(/^#/, ''));
+                    const accessToken = params.get('access_token');
+                    if (accessToken) {
+                        const { data: userData, error: userErr } = await supabase.auth.getUser(accessToken);
+                        if (!userErr && userData) authUser = userData.user;
+                    }
+                }
+
+                if (!authUser) {
+                    throw new Error("Impossible d'identifier l'utilisateur authentifié depuis Supabase Auth.");
+                }
+
                 const email = authUser.email.toLowerCase();
                 const metadata = authUser.user_metadata || {};
 
@@ -125,8 +157,12 @@ export async function onRequestPost(context) {
         });
 
     } catch (error) {
-        console.error("ERREUR CRITIQUE DANS PROXY (500):", error.message);
-        return new Response(JSON.stringify({ status: 'error', message: error.message }), {
+        console.error("ERREUR CRITIQUE DANS PROXY (500):", error.stack || error.message);
+        return new Response(JSON.stringify({ 
+            status: 'error', 
+            message: error.message || 'Erreur interne du serveur',
+            stack: error.stack 
+        }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' }
         });

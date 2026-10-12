@@ -136,30 +136,23 @@
     </main>
 
     <div id="modals-container">
-        <!-- Auth Modal -->
+        <!-- Auth Modal (Magic Link) -->
         <div id="auth-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
             <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-user-check text-spblue mr-2"></i>Espace Parent - Connexion Sécurisée</h3>
+                    <h3 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-envelope-open-text text-spblue mr-2"></i>Espace Parent - Lien Magique</h3>
                     <button onclick="AuthModal.close()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
                 </div>
-                <p class="text-xs text-slate-500 mb-4">Saisissez votre email. Si le compte existe, saisissez votre mot de passe. Sinon, remplissez vos informations pour créer votre compte.</p>
+                <p class="text-xs text-slate-500 mb-4">Saisissez votre email. Si le compte n'existe pas, renseignez vos informations pour recevoir votre lien de connexion.</p>
                 
                 <form onsubmit="AuthModal.submit(event)" class="space-y-3.5 text-xs">
                     <div>
                         <label class="block font-bold text-slate-700 uppercase mb-1">Adresse Email *</label>
                         <input type="email" id="login-email-input" required placeholder="ex: marie.dubois@gmail.com" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue">
                     </div>
-                    
-                    <!-- Dynamic fields container based on email check -->
-                    <div id="auth-password-group" class="hidden">
-                        <label class="block font-bold text-slate-700 uppercase mb-1">Mot de passe *</label>
-                        <input type="password" id="login-password" placeholder="••••••••" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue">
-                        <p id="auth-error-msg" class="text-spred font-semibold text-[11px] mt-1 hidden">Mot de passe incorrect.</p>
-                    </div>
 
                     <div id="auth-signup-group" class="hidden space-y-3 pt-2 border-t border-slate-100">
-                        <p class="text-[11px] text-spgreen font-semibold"><i class="fa-solid fa-user-plus mr-1"></i>Nouvel email détecté. Complétez vos informations :</p>
+                        <p class="text-[11px] text-spgreen font-semibold"><i class="fa-solid fa-user-plus mr-1"></i>Première connexion ? Complétez vos informations :</p>
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label class="block font-bold text-slate-700 uppercase mb-1">Prénom *</label>
@@ -174,14 +167,10 @@
                             <label class="block font-bold text-slate-700 uppercase mb-1">Classe(s) des enfants *</label>
                             <input type="text" id="login-kids" placeholder="ex: TPS, CP, CM2" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue">
                         </div>
-                        <div>
-                            <label class="block font-bold text-slate-700 uppercase mb-1">Créer un mot de passe *</label>
-                            <input type="password" id="signup-password" placeholder="••••••••" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue">
-                        </div>
                     </div>
 
                     <button type="submit" id="auth-submit-btn" class="w-full py-3 bg-spblue hover:bg-spblue-dark text-white font-bold text-xs rounded-xl shadow-sm transition-all mt-2">
-                        Continuer
+                        Envoyer mon lien magique
                     </button>
                 </form>
             </div>
@@ -278,6 +267,9 @@
 
     <script>
         const SECURE_API_ENDPOINT = '/api/supabase-proxy'; 
+        const supabaseUrl = 'VOTRE_SUPABASE_URL'; // Remplacer par votre URL publique Supabase (nécessaire uniquement côté client pour la gestion du token de session du lien magique)
+        const supabaseAnonKey = 'VOTRE_SUPABASE_ANON_KEY';
+        const supabase = (supabaseUrl && supabaseUrl !== 'VOTRE_SUPABASE_URL') ? window.supabase.createClient(supabaseUrl, supabaseAnonKey) : null;
 
         const AppNavigation = {
             currentTab: 'school-year',
@@ -338,86 +330,59 @@
                 if (emailInput) emailInput.value = '';
                 emailInput.disabled = false;
                 
-                const pwdGroup = document.getElementById('auth-password-group');
                 const signupGroup = document.getElementById('auth-signup-group');
-                const errMsg = document.getElementById('auth-error-msg');
                 const submitBtn = document.getElementById('auth-submit-btn');
 
-                if (pwdGroup) pwdGroup.classList.add('hidden');
                 if (signupGroup) signupGroup.classList.add('hidden');
-                if (errMsg) errMsg.classList.add('hidden');
-                if (submitBtn) submitBtn.innerText = "Continuer";
+                if (submitBtn) submitBtn.innerText = "Envoyer mon lien magique";
             },
             async submit(e) {
                 e.preventDefault();
                 const emailInput = document.getElementById('login-email-input');
                 const email = emailInput.value.trim().toLowerCase();
 
-                // Etape 1 : Si l'email n'a pas encore été vérifié dans la base de données
+                // Etape 1 : Vérifier si l'email existe déjà
                 if (!this.checkedEmail) {
                     if (!email) return;
                     const exists = await SecureBackendService.checkEmailExists(email);
                     this.checkedEmail = email;
-                    emailInput.disabled = true;
 
-                    const pwdGroup = document.getElementById('auth-password-group');
                     const signupGroup = document.getElementById('auth-signup-group');
                     const submitBtn = document.getElementById('auth-submit-btn');
 
                     if (exists) {
-                        // L'email existe : demander le mot de passe
-                        pwdGroup.classList.remove('hidden');
                         signupGroup.classList.add('hidden');
-                        submitBtn.innerText = "Se connecter";
+                        submitBtn.innerText = "Envoyer mon lien de connexion";
                     } else {
-                        // L'email n'existe pas : proposer de saisir les informations de création de compte
-                        pwdGroup.classList.add('hidden');
                         signupGroup.classList.remove('hidden');
                         document.getElementById('login-firstname').required = true;
                         document.getElementById('login-lastname').required = true;
                         document.getElementById('login-kids').required = true;
-                        document.getElementById('signup-password').required = true;
-                        submitBtn.innerText = "Créer mon compte et me connecter";
+                        submitBtn.innerText = "Créer mon compte et envoyer le lien";
                     }
+                    emailInput.disabled = true;
                     return;
                 }
 
-                // Etape 2 : Traitement de la connexion ou de l'inscription
+                // Etape 2 : Envoyer le lien magique via le backend proxy
                 const exists = await SecureBackendService.checkEmailExists(this.checkedEmail);
-                if (exists) {
-                    // Vérification du mot de passe
-                    const password = document.getElementById('login-password').value;
-                    const res = await SecureBackendService.login({ email: this.checkedEmail, password, isLogin: true });
-                    if (res.status === 'error') {
-                        const errMsg = document.getElementById('auth-error-msg');
-                        if (errMsg) {
-                            errMsg.innerText = res.message || "Mot de passe incorrect.";
-                            errMsg.classList.remove('hidden');
-                        }
-                        UIUtils.showToast("Mot de passe incorrect.", "error");
-                        return;
-                    }
-                    AppState.setCurrentUser(res.user);
-                } else {
-                    // Inscription nouveau compte
-                    const firstname = document.getElementById('login-firstname').value.trim();
-                    const lastname = document.getElementById('login-lastname').value.trim();
-                    const kidsClasses = document.getElementById('login-kids').value.trim();
-                    const password = document.getElementById('signup-password').value;
+                const firstname = document.getElementById('login-firstname').value.trim();
+                const lastname = document.getElementById('login-lastname').value.trim();
+                const kidsClasses = document.getElementById('login-kids').value.trim();
 
-                    const res = await SecureBackendService.login({ 
-                        email: this.checkedEmail, 
-                        password, 
-                        firstname, 
-                        lastname, 
-                        kidsClasses, 
-                        isLogin: false 
-                    });
-                    if (res.status === 'error') {
-                        UIUtils.showToast(res.message || "Erreur lors de la création du compte", "error");
-                        return;
-                    }
-                    AppState.setCurrentUser(res.user);
+                const res = await SecureBackendService.callApi('send_magic_link', {
+                    email: this.checkedEmail,
+                    firstname,
+                    lastname,
+                    kidsClasses,
+                    isExisting: exists
+                });
+
+                if (res.status === 'success') {
+                    UIUtils.showToast("Lien magique envoyé ! Vérifiez votre boîte mail.");
+                    AuthModal.close();
+                } else {
+                    UIUtils.showToast(res.message || "Erreur lors de l'envoi du lien.", "error");
                 }
             }
         };
@@ -517,10 +482,8 @@
                 if (res && typeof res.exists === 'boolean') {
                     return res.exists;
                 }
-                // Mode de secours local
                 const localUsers = JSON.parse(localStorage.getItem('scolar_local_users') || '[]');
-                const found = localUsers.some(u => u.email.toLowerCase() === email.toLowerCase()) || email.toLowerCase() === 'marie.parent@apel.fr';
-                return found;
+                return localUsers.some(u => u.email.toLowerCase() === email.toLowerCase()) || email.toLowerCase() === 'marie.parent@apel.fr';
             },
 
             async saveEvent(event) {
@@ -529,47 +492,6 @@
 
             async deleteEvent(eventId) {
                 await this.callApi('delete_event', { eventId });
-            },
-
-            async login(payload) {
-                const res = await this.callApi('login_auth', payload);
-                if (res && res.status) {
-                    return res;
-                }
-                
-                // Mode de secours local intelligent
-                const email = payload.email.trim().toLowerCase();
-                let localUsers = JSON.parse(localStorage.getItem('scolar_local_users') || '[]');
-                let userRecord = localUsers.find(u => u.email.toLowerCase() === email);
-
-                if (payload.isLogin) {
-                    if (email === 'marie.parent@apel.fr') {
-                        return {
-                            status: 'success',
-                            user: { email, firstname: 'Marie', lastname: 'Parent', kids_classes: 'Bureau APEL', is_admin: true }
-                        };
-                    }
-                    if (!userRecord || userRecord.password !== payload.password) {
-                        return { status: 'error', message: 'Mot de passe incorrect.' };
-                    }
-                    return { status: 'success', user: userRecord };
-                } else {
-                    // Création de compte
-                    if (userRecord) {
-                        return { status: 'error', message: 'Cet email existe déjà.' };
-                    }
-                    const newUser = {
-                        email: email,
-                        password: payload.password,
-                        firstname: payload.firstname,
-                        lastname: payload.lastname,
-                        kids_classes: payload.kidsClasses,
-                        is_admin: email === 'marie.parent@apel.fr'
-                    };
-                    localUsers.push(newUser);
-                    localStorage.setItem('scolar_local_users', JSON.stringify(localUsers));
-                    return { status: 'success', user: newUser };
-                }
             },
 
             getFallbackData() {
@@ -610,6 +532,23 @@
             currentUser: JSON.parse(localStorage.getItem('scolar_current_user') || 'null'),
 
             async init() {
+                // Gestion du retour de lien magique Supabase
+                if (supabase) {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (session && session.user) {
+                        const email = session.user.email;
+                        // Récupérer les infos de l'utilisateur public
+                        const res = await SecureBackendService.callApi('get_user_by_email', { email });
+                        if (res && res.user) {
+                            this.currentUser = res.user;
+                            localStorage.setItem('scolar_current_user', JSON.stringify(this.currentUser));
+                            // Nettoyer l'URL du hash de session Supabase
+                            window.history.replaceState({}, document.title, window.location.pathname);
+                            UIUtils.showToast(`Bienvenue, ${this.currentUser.firstname} !`);
+                        }
+                    }
+                }
+
                 const data = await SecureBackendService.getData();
                 this.events = data.events || [];
                 this.admins = data.admins || [];
@@ -658,12 +597,11 @@
                     kidsClasses: userObj.kidsClasses || userObj.kids_classes || 'CP' 
                 };
                 localStorage.setItem('scolar_current_user', JSON.stringify(this.currentUser));
-                UIUtils.showToast(`Bienvenue, ${this.currentUser.firstname} !`);
                 this.notifyAll();
-                AuthModal.close();
             },
 
-            logout() {
+            async logout() {
+                if (supabase) await supabase.auth.signOut();
                 this.currentUser = null;
                 localStorage.removeItem('scolar_current_user');
                 UIUtils.showToast("Déconnexion réussie.");

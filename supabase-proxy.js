@@ -91,7 +91,6 @@ export async function onRequestPost(context) {
                 const email = authUser.email.toLowerCase();
                 const metadata = authUser.user_metadata || {};
 
-                // Chercher l'utilisateur par email ou par ID
                 let { data: dbUser, error: findErr } = await supabase.from('users').select('*').eq('email', email).maybeSingle();
                 if (findErr) console.error("Erreur recherche user dans public.users:", findErr);
 

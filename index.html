@@ -484,8 +484,9 @@
             users: [],
             currentUser: JSON.parse(localStorage.getItem('scolar_current_user') || 'null'),
 
+            // Remplacez la méthode init() dans index.html par celle-ci pour intercepter correctement le flux Supabase
             async init() {
-                // 1. Interception du code PKCE ou du hash renvoyé par Supabase Auth après le clic sur le lien magique
+                // 1. Interception du code PKCE ou du hash renvoyé par Supabase Auth après le clic sur le lien
                 const urlParams = new URLSearchParams(window.location.search);
                 const code = urlParams.get('code');
                 const hash = window.location.hash;
@@ -494,12 +495,25 @@
                     UIUtils.showToast("Authentification en cours...", "success");
                     
                     try {
-                        // On appelle le backend pour échanger le code ou récupérer la session active
-                        const res = await SecureBackendService.callApi('verify_magic_link', { code, hash });
-                        if (res && res.status === 'success' && res.user) {
-                            this.setCurrentUser(res.user);
-                            window.history.replaceState({}, document.title, window.location.pathname); // Nettoyer l'URL
-                            UIUtils.showToast("Connexion réussie ! Bienvenue " + res.user.firstname);
+                        if (code) {
+                            const res = await SecureBackendService.callApi('verify_magic_link', { code });
+                            if (res && res.status === 'success' && res.user) {
+                                this.setCurrentUser(res.user);
+                                window.history.replaceState({}, document.title, window.location.pathname);
+                                UIUtils.showToast("Connexion réussie ! Bienvenue " + res.user.firstname);
+                            }
+                        } else if (hash && hash.includes('access_token')) {
+                            // Rétrocompatibilité avec l'ancien flux hash implicit
+                            const hashParams = new URLSearchParams(hash.substring(1));
+                            const email = hashParams.get('email');
+                            if (email) {
+                                const res = await SecureBackendService.callApi('get_user_by_email', { email });
+                                if (res && res.user) {
+                                    this.setCurrentUser(res.user);
+                                    window.history.replaceState({}, document.title, window.location.pathname);
+                                    UIUtils.showToast("Connexion réussie ! Bienvenue " + res.user.firstname);
+                                }
+                            }
                         }
                     } catch (err) {
                         console.warn("Erreur lors de la validation du lien magique:", err);
@@ -513,7 +527,6 @@
                 this.admins = data.admins || [];
                 this.users = data.users || [];
 
-                // S'assurer que les données utilisateur courantes sont à jour avec la base
                 if (this.currentUser) {
                     const found = this.users.find(u => u.email.toLowerCase() === this.currentUser.email.toLowerCase());
                     if (found) {

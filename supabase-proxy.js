@@ -41,56 +41,30 @@ export async function onRequestPost(context) {
                 break;
             }
 
-             case 'verify_magic_link': {
-                // Si vous utilisez le code PKCE renvoyé par Supabase dans les query params (?code=...)
-                const code = payload.code;
-                
-                let sessionUser = null;
-
-                if (code) {
-                    const { data: sessionData, error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
-                    if (!sessionError && sessionData && sessionData.user) {
-                        sessionUser = sessionData.user;
-                    }
-                }
-
-                if (!sessionUser) {
-                    throw new Error("Impossible de valider la session Supabase Auth.");
-                }
-
-                const userId = sessionUser.id;
-                const email = sessionUser.email.toLowerCase();
-                const metadata = sessionUser.user_metadata || {};
-
-                // Vérifier si l'utilisateur existe déjà dans public.users
-                let { data: existingUser } = await supabase.from('users').select('*').eq('id', userId).maybeSingle();
-
-                if (!existingUser) {
-                    // S'il n'existe pas, on le crée avec les métadonnées du lien magique
-                    const newUser = {
-                        id: userId,
-                        email: email,
-                        firstname: metadata.firstname || 'Parent',
-                        lastname: metadata.lastname || 'Bénévole',
-                        phone: metadata.phone || null,
-                        kids_classes: metadata.kids_classes || 'CP',
-                        is_admin: email === 'marie.parent@apel.fr'
-                    };
-
-                    const { data: inserted, error: insertError } = await supabase.from('users').insert([newUser]).select().single();
-                    if (insertError) throw new Error(insertError.message);
-                    existingUser = inserted;
-                }
-
-                result = { status: 'success', user: existingUser };
-                break;
-            }
-            
             case 'send_magic_link': {
                 const email = (payload.email || '').trim().toLowerCase();
                 const firstname = payload.firstname || 'Parent';
                 const lastname = payload.lastname || 'Bénévole';
                 const kidsClasses = payload.kidsClasses || 'CP';
+
+                // Si c'est un nouvel utilisateur, on peut pré-insérer ou upsert dans public.users 
+                // pour s'assurer que ses infos sont prêtes dès qu'il clique sur le lien
+                if (payload.isNew) {
+                    // On récupère l'ID auth ou on prépare la base s'il existe déjà dans auth.users
+                    const { data: listUsers } = await supabase.auth.admin.listUsers();
+                    const existingAuthUser = listUsers?.users?.find(u => u.email.toLowerCase() === email);
+
+                    if (existingAuthUser) {
+                        await supabase.from('users').upsert({
+                            id: existingAuthUser.id,
+                            email: email,
+                            firstname: firstname,
+                            lastname: lastname,
+                            kids_classes: kidsClasses,
+                            is_admin: email === 'marie.parent@apel.fr'
+                        });
+                    }
+                }
 
                 // Envoi du lien magique via Supabase Auth
                 const { data, error } = await supabase.auth.signInWithOtp({
@@ -109,6 +83,41 @@ export async function onRequestPost(context) {
                     throw new Error(error.message);
                 }
                 result = { status: 'success', message: 'Lien magique envoyé avec succès.' };
+                break;
+            }
+
+            case 'verify_magic_link': {
+                // Action optionnelle pour valider le code PKCE renvoyé par Supabase
+                const code = payload.code;
+                if (!code) throw new Error("Code d'authentification manquant.");
+
+                const { data: sessionData, error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
+                if (sessionError || !sessionData || !sessionData.user) {
+                    throw new Error(sessionError?.message || "Impossible de valider la session Supabase.");
+                }
+
+                const authUser = sessionData.user;
+                const email = authUser.email.toLowerCase();
+                const metadata = authUser.user_metadata || {};
+
+                // Vérifier si l'utilisateur existe dans public.users
+                let { data: dbUser } = await supabase.from('users').select('*').eq('id', authUser.id).maybeSingle();
+
+                if (!dbUser) {
+                    const newUser = {
+                        id: authUser.id,
+                        email: email,
+                        firstname: metadata.firstname || 'Parent',
+                        lastname: metadata.lastname || 'Bénévole',
+                        kids_classes: metadata.kids_classes || 'CP',
+                        is_admin: email === 'marie.parent@apel.fr'
+                    };
+                    const { data: inserted, error: insertErr } = await supabase.from('users').insert([newUser]).select().single();
+                    if (insertErr) throw new Error(insertErr.message);
+                    dbUser = inserted;
+                }
+
+                result = { status: 'success', user: dbUser };
                 break;
             }
 

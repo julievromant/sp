@@ -8,36 +8,35 @@ export async function onRequestPost(context) {
         const { action, ...payload } = body;
         let result = { status: 'success' };
 
-        // Utilisation de la clé service_role pour les opérations admin/backend sécurisées
         const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
 
         switch (action) {
             case 'get_data': {
-                const { data: events } = await supabase.from('events').select('*');
-                const { data: users } = await supabase.from('users').select('*');
+                const { data: events, error: evErr } = await supabase.from('events').select('*');
+                if (evErr) console.error("Erreur lecture events:", evErr);
+                const { data: users, error: usErr } = await supabase.from('users').select('*');
+                if (usErr) console.error("Erreur lecture users:", usErr);
                 result = { events: events || [], users: users || [] };
                 break;
             }
 
-            case 'save_event':
-                await supabase.from('events').upsert(payload.event);
+            case 'save_event': {
+                const { error } = await supabase.from('events').upsert(payload.event);
+                if (error) throw new Error("Erreur save_event: " + error.message);
                 break;
+            }
 
-            case 'delete_event':
-                await supabase.from('events').delete().eq('id', payload.eventId);
+            case 'delete_event': {
+                const { error } = await supabase.from('events').delete().eq('id', payload.eventId);
+                if (error) throw new Error("Erreur delete_event: " + error.message);
                 break;
+            }
 
             case 'check_email': {
                 const email = (payload.email || '').trim().toLowerCase();
                 const { data, error } = await supabase.from('users').select('email').eq('email', email).maybeSingle();
+                if (error) console.error("Erreur check_email:", error);
                 result = { exists: !!data };
-                break;
-            }
-
-            case 'get_user_by_email': {
-                const email = (payload.email || '').trim().toLowerCase();
-                const { data: user } = await supabase.from('users').select('*').eq('email', email).maybeSingle();
-                result = { user: user || null };
                 break;
             }
 
@@ -48,26 +47,20 @@ export async function onRequestPost(context) {
                 const kidsClasses = payload.kidsClasses || 'CP';
 
                 if (payload.isNew) {
-                    const { data: listUsers } = await supabase.auth.admin.listUsers();
-                    const existingAuthUser = listUsers?.users?.find(u => u.email.toLowerCase() === email);
-
-                    if (existingAuthUser) {
-                        await supabase.from('users').upsert({
-                            id: existingAuthUser.id,
-                            email: email,
-                            firstname: firstname,
-                            lastname: lastname,
-                            kids_classes: kidsClasses,
-                            is_admin: email === 'marie.parent@apel.fr'
-                        });
-                    }
+                    await supabase.from('users').upsert({
+                        email: email,
+                        firstname: firstname,
+                        lastname: lastname,
+                        kids_classes: kidsClasses,
+                        is_admin: email === 'marie.parent@apel.fr'
+                    }, { onConflict: 'email' });
                 }
 
-                // Envoi du lien magique via Supabase Auth
+                const redirectUrl = new URL(request.url).origin + '/';
                 const { data, error } = await supabase.auth.signInWithOtp({
                     email: email,
                     options: {
-                        emailRedirectTo: new URL(request.url).origin + '/',
+                        emailRedirectTo: redirectUrl,
                         data: {
                             firstname: firstname,
                             lastname: lastname,
@@ -77,6 +70,7 @@ export async function onRequestPost(context) {
                 });
 
                 if (error) {
+                    console.error("Erreur Supabase signInWithOtp:", error);
                     throw new Error(error.message);
                 }
                 result = { status: 'success', message: 'Lien magique envoyé avec succès.' };
@@ -85,19 +79,21 @@ export async function onRequestPost(context) {
 
             case 'verify_magic_link': {
                 const code = payload.code;
-                if (!code) throw new Error("Code d'authentification manquant.");
+                if (!code) throw new Error("Code d'authentification manquant dans la requête.");
 
                 const { data: sessionData, error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
                 if (sessionError || !sessionData || !sessionData.user) {
-                    throw new Error(sessionError?.message || "Impossible de valider la session Supabase.");
+                    console.error("Erreur exchangeCodeForSession:", sessionError);
+                    throw new Error(sessionError?.message || "Impossible d'échanger le code contre une session Supabase.");
                 }
 
                 const authUser = sessionData.user;
                 const email = authUser.email.toLowerCase();
                 const metadata = authUser.user_metadata || {};
 
-                // Vérifier si l'utilisateur existe dans public.users
-                let { data: dbUser } = await supabase.from('users').select('*').eq('id', authUser.id).maybeSingle();
+                // Chercher l'utilisateur par email ou par ID
+                let { data: dbUser, error: findErr } = await supabase.from('users').select('*').eq('email', email).maybeSingle();
+                if (findErr) console.error("Erreur recherche user dans public.users:", findErr);
 
                 if (!dbUser) {
                     const newUser = {
@@ -109,7 +105,10 @@ export async function onRequestPost(context) {
                         is_admin: email === 'marie.parent@apel.fr'
                     };
                     const { data: inserted, error: insertErr } = await supabase.from('users').insert([newUser]).select().single();
-                    if (insertErr) throw new Error(insertErr.message);
+                    if (insertErr) {
+                        console.error("Erreur insertion public.users:", insertErr);
+                        throw new Error("Erreur base de données lors de la création de l'utilisateur: " + insertErr.message);
+                    }
                     dbUser = inserted;
                 }
 
@@ -127,6 +126,7 @@ export async function onRequestPost(context) {
         });
 
     } catch (error) {
+        console.error("ERREUR CRITIQUE DANS PROXY (500):", error.message);
         return new Response(JSON.stringify({ status: 'error', message: error.message }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' }

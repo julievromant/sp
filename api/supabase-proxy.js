@@ -47,10 +47,7 @@ export async function onRequestPost(context) {
                 const lastname = payload.lastname || 'Bénévole';
                 const kidsClasses = payload.kidsClasses || 'CP';
 
-                // Si c'est un nouvel utilisateur, on peut pré-insérer ou upsert dans public.users 
-                // pour s'assurer que ses infos sont prêtes dès qu'il clique sur le lien
                 if (payload.isNew) {
-                    // On récupère l'ID auth ou on prépare la base s'il existe déjà dans auth.users
                     const { data: listUsers } = await supabase.auth.admin.listUsers();
                     const existingAuthUser = listUsers?.users?.find(u => u.email.toLowerCase() === email);
 
@@ -87,7 +84,6 @@ export async function onRequestPost(context) {
             }
 
             case 'verify_magic_link': {
-                // Action optionnelle pour valider le code PKCE renvoyé par Supabase
                 const code = payload.code;
                 if (!code) throw new Error("Code d'authentification manquant.");
 

@@ -41,6 +41,51 @@ export async function onRequestPost(context) {
                 break;
             }
 
+             case 'verify_magic_link': {
+                // Si vous utilisez le code PKCE renvoyé par Supabase dans les query params (?code=...)
+                const code = payload.code;
+                
+                let sessionUser = null;
+
+                if (code) {
+                    const { data: sessionData, error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
+                    if (!sessionError && sessionData && sessionData.user) {
+                        sessionUser = sessionData.user;
+                    }
+                }
+
+                if (!sessionUser) {
+                    throw new Error("Impossible de valider la session Supabase Auth.");
+                }
+
+                const userId = sessionUser.id;
+                const email = sessionUser.email.toLowerCase();
+                const metadata = sessionUser.user_metadata || {};
+
+                // Vérifier si l'utilisateur existe déjà dans public.users
+                let { data: existingUser } = await supabase.from('users').select('*').eq('id', userId).maybeSingle();
+
+                if (!existingUser) {
+                    // S'il n'existe pas, on le crée avec les métadonnées du lien magique
+                    const newUser = {
+                        id: userId,
+                        email: email,
+                        firstname: metadata.firstname || 'Parent',
+                        lastname: metadata.lastname || 'Bénévole',
+                        phone: metadata.phone || null,
+                        kids_classes: metadata.kids_classes || 'CP',
+                        is_admin: email === 'marie.parent@apel.fr'
+                    };
+
+                    const { data: inserted, error: insertError } = await supabase.from('users').insert([newUser]).select().single();
+                    if (insertError) throw new Error(insertError.message);
+                    existingUser = inserted;
+                }
+
+                result = { status: 'success', user: existingUser };
+                break;
+            }
+            
             case 'send_magic_link': {
                 const email = (payload.email || '').trim().toLowerCase();
                 const firstname = payload.firstname || 'Parent';

@@ -485,46 +485,35 @@
             currentUser: JSON.parse(localStorage.getItem('scolar_current_user') || 'null'),
 
             async init() {
-                // Interception du hash de l'URL renvoyé par le lien magique Supabase (#access_token=...)
+                // 1. Interception du code PKCE ou du hash renvoyé par Supabase Auth après le clic sur le lien magique
+                const urlParams = new URLSearchParams(window.location.search);
+                const code = urlParams.get('code');
                 const hash = window.location.hash;
-                if (hash && hash.includes('access_token')) {
-                    const hashParams = new URLSearchParams(hash.substring(1));
-                    const email = hashParams.get('email');
+
+                if (code || (hash && hash.includes('access_token'))) {
+                    UIUtils.showToast("Authentification en cours...", "success");
                     
-                    if (email) {
-                        // Décoder les métadonnées utilisateurs renvoyées dans le jeton ou la base
-                        let userMeta = {};
-                        try {
-                            const idToken = hashParams.get('access_token');
-                            const payloadBase64 = idToken.split('.')[1];
-                            const decoded = JSON.parse(atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/')));
-                            if (decoded && decoded.user_metadata) {
-                                userMeta = decoded.user_metadata;
-                            }
-                        } catch (err) {
-                            console.warn("Impossible de décoder les métadonnées du token:", err);
+                    try {
+                        // On appelle le backend pour échanger le code ou récupérer la session active
+                        const res = await SecureBackendService.callApi('verify_magic_link', { code, hash });
+                        if (res && res.status === 'success' && res.user) {
+                            this.setCurrentUser(res.user);
+                            window.history.replaceState({}, document.title, window.location.pathname); // Nettoyer l'URL
+                            UIUtils.showToast("Connexion réussie ! Bienvenue " + res.user.firstname);
                         }
-
-                        const userObj = {
-                            email: email,
-                            firstname: userMeta.firstname || 'Julie',
-                            lastname: userMeta.lastname || 'Vromant',
-                            kidsClasses: userMeta.kids_classes || 'CE2, CM2',
-                            is_admin: email === 'marie.parent@apel.fr'
-                        };
-
-                        this.setCurrentUser(userObj);
-                        window.history.replaceState({}, document.title, window.location.pathname); // Nettoyer l'URL
-                        UIUtils.showToast("Connexion réussie ! Bienvenue " + userObj.firstname);
+                    } catch (err) {
+                        console.warn("Erreur lors de la validation du lien magique:", err);
+                        UIUtils.showToast("Erreur lors de la connexion par lien magique.", "error");
                     }
                 }
 
+                // 2. Chargement des données globales
                 const data = await SecureBackendService.getData();
                 this.events = data.events || [];
                 this.admins = data.admins || [];
                 this.users = data.users || [];
 
-                // S'assurer que Julie est dans la liste des utilisateurs si besoin
+                // S'assurer que les données utilisateur courantes sont à jour avec la base
                 if (this.currentUser) {
                     const found = this.users.find(u => u.email.toLowerCase() === this.currentUser.email.toLowerCase());
                     if (found) {
@@ -534,6 +523,7 @@
 
                 this.notifyAll();
             },
+
 
             isAdmin() {
                 if (!this.currentUser || !this.currentUser.email) return false;

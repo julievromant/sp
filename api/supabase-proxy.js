@@ -3,11 +3,10 @@ import { createClient } from '@supabase/supabase-js';
 export async function onRequestPost(context) {
     const { request, env } = context;
 
-    // Vérification initiale des variables d'environnement Supabase
     if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
         return new Response(JSON.stringify({ 
             status: 'error', 
-            message: 'Configuration serveur incomplète : SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY manquant dans les variables d’environnement Cloudflare Pages.' 
+            message: 'Configuration serveur incomplète : SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY manquant.' 
         }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' }
@@ -28,18 +27,79 @@ export async function onRequestPost(context) {
                 
                 const { data: users, error: usErr } = await supabase.from('users').select('*');
                 if (usErr) console.error("Erreur lecture users:", usErr);
+
+                const { data: registrations, error: regErr } = await supabase.from('registrations').select('*');
+                if (regErr) console.error("Erreur lecture registrations:", regErr);
+
+                // Associer les inscriptions de la table dédiée aux missions respectives
+                const formattedEvents = (events || []).map(evt => {
+                    const missions = (evt.missions || []).map(m => {
+                        const mVolunteers = (registrations || [])
+                            .filter(r => r.event_id === String(evt.id) && r.mission_id === String(m.id))
+                            .map(r => ({ email: r.user_email, name: r.user_name }));
+                        return { ...m, volunteers: mVolunteers };
+                    });
+                    return { ...evt, missions };
+                });
                 
-                result = { events: events || [], users: users || [] };
+                result = { events: formattedEvents, users: users || [] };
+                break;
+            }
+
+            case 'toggle_signup': {
+                const { eventId, missionId, email, name } = payload;
+                const cleanEmail = (email || '').trim().toLowerCase();
+
+                // Vérifier si l'inscription existe déjà
+                const { data: existing } = await supabase
+                    .from('registrations')
+                    .select('id')
+                    .eq('event_id', String(eventId))
+                    .eq('mission_id', String(missionId))
+                    .eq('user_email', cleanEmail)
+                    .maybeSingle();
+
+                if (existing) {
+                    // Supprimer l'inscription
+                    const { error } = await supabase
+                        .from('registrations')
+                        .delete()
+                        .eq('id', existing.id);
+                    if (error) throw new Error("Erreur annulation inscription: " + error.message);
+                    result = { status: 'success', action: 'removed' };
+                } else {
+                    // Créer l'inscription
+                    const { error } = await supabase
+                        .from('registrations')
+                        .insert([{
+                            event_id: String(eventId),
+                            mission_id: String(missionId),
+                            user_email: cleanEmail,
+                            user_name: name
+                        }]);
+                    if (error) throw new Error("Erreur validation inscription: " + error.message);
+                    result = { status: 'success', action: 'added' };
+                }
                 break;
             }
 
             case 'save_event': {
-                const { error } = await supabase.from('events').upsert(payload.event);
+                // Nettoyer les missions des bénévoles avant stockage dans la colonne jsonb si elle existe
+                const cleanEvent = { ...payload.event };
+                if (cleanEvent.missions) {
+                    cleanEvent.missions = cleanEvent.missions.map(m => {
+                        const { volunteers, ...rest } = m;
+                        return rest;
+                    });
+                }
+                const { error } = await supabase.from('events').upsert(cleanEvent);
                 if (error) throw new Error("Erreur save_event: " + error.message);
                 break;
             }
 
             case 'delete_event': {
+                // Supprimer les inscriptions associées puis l'événement
+                await supabase.from('registrations').delete().eq('event_id', String(payload.eventId));
                 const { error } = await supabase.from('events').delete().eq('id', payload.eventId);
                 if (error) throw new Error("Erreur delete_event: " + error.message);
                 break;
@@ -70,22 +130,15 @@ export async function onRequestPost(context) {
                 }
 
                 const redirectUrl = new URL(request.url).origin + '/';
-                const { data, error } = await supabase.auth.signInWithOtp({
+                const { error } = await supabase.auth.signInWithOtp({
                     email: email,
                     options: {
                         emailRedirectTo: redirectUrl,
-                        data: {
-                            firstname: firstname,
-                            lastname: lastname,
-                            kids_classes: kidsClasses
-                        }
+                        data: { firstname, lastname, kids_classes: kidsClasses }
                     }
                 });
 
-                if (error) {
-                    console.error("Erreur Supabase signInWithOtp détaillée:", JSON.stringify(error, null, 2));
-                    throw new Error(error.message + (error.status ? ` (Status: ${error.status})` : ''));
-                }
+                if (error) throw new Error(error.message);
                 result = { status: 'success', message: 'Lien magique envoyé avec succès.' };
                 break;
             }
@@ -95,17 +148,14 @@ export async function onRequestPost(context) {
                 const hash = payload.hash;
 
                 if (!code && (!hash || !hash.includes('access_token'))) {
-                    throw new Error("Paramètres d'authentification manquants (ni code PKCE ni token hash trouvés).");
+                    throw new Error("Paramètres d'authentification manquants.");
                 }
 
                 let authUser = null;
 
                 if (code) {
                     const { data: sessionData, error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
-                    if (sessionError || !sessionData || !sessionData.user) {
-                        console.error("Erreur exchangeCodeForSession détaillée:", JSON.stringify(sessionError, null, 2));
-                        throw new Error(sessionError?.message || "Échec de l'échange du code PKCE contre une session.");
-                    }
+                    if (sessionError || !sessionData?.user) throw new Error(sessionError?.message || "Échec échange du code PKCE.");
                     authUser = sessionData.user;
                 } else if (hash) {
                     const params = new URLSearchParams(hash.replace(/^#/, ''));
@@ -116,15 +166,12 @@ export async function onRequestPost(context) {
                     }
                 }
 
-                if (!authUser) {
-                    throw new Error("Impossible d'identifier l'utilisateur authentifié depuis Supabase Auth.");
-                }
+                if (!authUser) throw new Error("Utilisateur introuvable.");
 
                 const email = authUser.email.toLowerCase();
                 const metadata = authUser.user_metadata || {};
 
-                let { data: dbUser, error: findErr } = await supabase.from('users').select('*').eq('email', email).maybeSingle();
-                if (findErr) console.error("Erreur recherche user dans public.users:", findErr);
+                let { data: dbUser } = await supabase.from('users').select('*').eq('email', email).maybeSingle();
 
                 if (!dbUser) {
                     const newUser = {
@@ -136,10 +183,7 @@ export async function onRequestPost(context) {
                         is_admin: email === 'marie.parent@apel.fr'
                     };
                     const { data: inserted, error: insertErr } = await supabase.from('users').insert([newUser]).select().single();
-                    if (insertErr) {
-                        console.error("Erreur insertion public.users:", insertErr);
-                        throw new Error("Erreur base de données lors de la création de l'utilisateur: " + insertErr.message);
-                    }
+                    if (insertErr) throw new Error("Erreur création utilisateur: " + insertErr.message);
                     dbUser = inserted;
                 }
 
@@ -148,7 +192,7 @@ export async function onRequestPost(context) {
             }
 
             default:
-                throw new Error('Action inconnue ou non gérée: ' + action);
+                throw new Error('Action inconnue: ' + action);
         }
 
         return new Response(JSON.stringify(result), {
@@ -157,11 +201,10 @@ export async function onRequestPost(context) {
         });
 
     } catch (error) {
-        console.error("ERREUR CRITIQUE DANS PROXY (500):", error.stack || error.message);
+        console.error("ERREUR PROXY:", error.message);
         return new Response(JSON.stringify({ 
             status: 'error', 
-            message: error.message || 'Erreur interne du serveur',
-            stack: error.stack 
+            message: error.message || 'Erreur interne du serveur' 
         }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' }

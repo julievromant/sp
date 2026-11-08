@@ -821,8 +821,28 @@
                 return;
             }
 
-            container.innerHTML = AppState.events.map(evt => {
+            // Filtrer les événements pour ne garder que ceux ayant des missions disponibles (non complètes ou où le bénévole est inscrit)
+            const eventsWithAvailableMissions = AppState.events.map(evt => {
                 const missions = evt.missions || [];
+                const availableMissions = missions.filter(m => {
+                    const volunteers = m.volunteers || [];
+                    const maxV = parseInt(m.maxVolunteers || 1);
+                    const isSignedUp = AppState.currentUser && volunteers.some(v => v.email.toLowerCase() === AppState.currentUser.email.toLowerCase());
+                    const isNotFull = volunteers.length < maxV;
+                    
+                    // On garde la mission si elle n'est pas complète OU si l'utilisateur y est déjà inscrit (pour pouvoir s'en désinscrire)
+                    return isNotFull || isSignedUp;
+                });
+                return { ...evt, availableMissions };
+            }).filter(evt => evt.availableMissions.length > 0);
+
+            if (eventsWithAvailableMissions.length === 0) {
+                container.innerHTML = `<div class="col-span-full bg-white rounded-2xl p-8 border border-slate-200 text-center text-slate-500 text-xs">Aucune mission disponible à l'inscription pour le moment.</div>`;
+                return;
+            }
+
+            container.innerHTML = eventsWithAvailableMissions.map(evt => {
+                const missions = evt.availableMissions;
                 const monthObj = MONTHS.find(m => m.id === evt.eventMonth);
                 const displayDate = evt.date ? evt.date.split('-').reverse().join('/') : (monthObj ? `Mois de ${monthObj.short}` : 'Date non définie');
 
@@ -846,12 +866,11 @@
                             <p class="text-xs text-slate-600 mt-2">${evt.description || ''}</p>
 
                             <div class="mt-4 pt-3 border-t border-slate-100 space-y-2">
-                                <p class="text-xs font-bold text-slate-700 uppercase tracking-wider"><i class="fa-solid fa-hand-holding-hand text-spblue mr-1"></i> Missions (${missions.length})</p>
+                                <p class="text-xs font-bold text-slate-700 uppercase tracking-wider"><i class="fa-solid fa-hand-holding-hand text-spblue mr-1"></i> Missions disponibles (${missions.length})</p>
                                 ${missions.map(m => {
                                     const volunteers = m.volunteers || [];
                                     const isSignedUp = AppState.currentUser && volunteers.some(v => v.email.toLowerCase() === AppState.currentUser.email.toLowerCase());
                                     const maxV = parseInt(m.maxVolunteers || 1);
-                                    const isFull = volunteers.length >= maxV && !isSignedUp;
                                     
                                     return `
                                         <div class="p-3 rounded-xl ${isSignedUp ? 'bg-spgreen-light/60 border border-spgreen/30' : 'bg-slate-50 border border-slate-100'} flex items-center justify-between gap-2 shadow-2xs">
@@ -863,12 +882,11 @@
                                                 </div>
                                                 <p class="text-[11px] text-slate-500 mt-1"><i class="fa-regular fa-clock mr-1"></i>${m.details || 'Détails non spécifiés'} (${volunteers.length}/${maxV} bénévoles)</p>
                                             </div>
-                                            <button onclick="AppState.toggleSignUp('${evt.id}', '${m.id}')" ${isFull ? 'disabled' : ''} class="px-3 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
+                                            <button onclick="AppState.toggleSignUp('${evt.id}', '${m.id}')" class="px-3 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
                                                 isSignedUp ? 'bg-spred hover:bg-spred-dark text-white' : 
-                                                isFull ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 
                                                 'bg-spblue hover:bg-spblue-dark text-white shadow-sm'
                                             }">
-                                                ${isSignedUp ? '<i class="fa-solid fa-xmark mr-1"></i>Annuler' : isFull ? 'Complet' : '<i class="fa-solid fa-check mr-1"></i>S\'inscrire'}
+                                                ${isSignedUp ? '<i class="fa-solid fa-xmark mr-1"></i>Annuler' : '<i class="fa-solid fa-check mr-1"></i>S\'inscrire'}
                                             </button>
                                         </div>
                                     `;

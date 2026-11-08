@@ -64,6 +64,7 @@ export async function onRequestPost(context) {
                         organizer: evt.organizer,
                         type: evt.type,
                         date: evt.date,
+                        eventMonth: evt.event_month || evt.eventMonth || '',
                         prepMonth: evt.prep_month || evt.prepMonth,
                         location: evt.location,
                         description: evt.description,
@@ -84,7 +85,8 @@ export async function onRequestPost(context) {
                     title: event.title,
                     organizer: event.organizer,
                     type: event.type,
-                    date: event.date,
+                    date: event.date || null,
+                    event_month: event.eventMonth || null,
                     prep_month: event.prepMonth,
                     location: event.location,
                     description: event.description

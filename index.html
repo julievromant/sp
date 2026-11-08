@@ -208,6 +208,22 @@
                         <input type="date" id="event-date-input" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue">
                     </div>
                     <div>
+                        <label class="block font-bold text-slate-700 uppercase mb-1">Mois de l'événement (si date indéterminée)</label>
+                        <select id="event-month-input" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue bg-white">
+                            <option value="">-- Utiliser la date exacte ci-contre --</option>
+                            <option value="09">Septembre</option>
+                            <option value="10">Octobre</option>
+                            <option value="11">Novembre</option>
+                            <option value="12">Décembre</option>
+                            <option value="01">Janvier</option>
+                            <option value="02">Février</option>
+                            <option value="03">Mars</option>
+                            <option value="04">Avril</option>
+                            <option value="05">Mai</option>
+                            <option value="06">Juin</option>
+                        </select>
+                    </div>
+                    <div>
                         <label class="block font-bold text-slate-700 uppercase mb-1">Mois de Début de Préparation</label>
                         <select id="event-prepmonth-input" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-spblue bg-white">
                             <option value="09">Septembre</option>
@@ -448,6 +464,7 @@
                         organizer: e.organizer,
                         type: e.type,
                         date: e.date,
+                        eventMonth: e.event_month || e.eventMonth || '',
                         prepMonth: e.prep_month || e.prepMonth,
                         location: e.location,
                         description: e.description,
@@ -628,6 +645,7 @@
             document.getElementById('event-organizer-input').value = 'APEL';
             document.getElementById('event-type-input').value = 'Fête';
             document.getElementById('event-date-input').value = '';
+            document.getElementById('event-month-input').value = '';
             document.getElementById('event-prepmonth-input').value = '09';
             document.getElementById('event-location-input').value = '';
             document.getElementById('event-desc-input').value = '';
@@ -641,6 +659,7 @@
                     document.getElementById('event-organizer-input').value = evt.organizer || 'APEL';
                     document.getElementById('event-type-input').value = evt.type || 'Fête';
                     document.getElementById('event-date-input').value = evt.date || '';
+                    document.getElementById('event-month-input').value = evt.eventMonth || '';
                     document.getElementById('event-prepmonth-input').value = evt.prepMonth || '09';
                     document.getElementById('event-location-input').value = evt.location || '';
                     document.getElementById('event-desc-input').value = evt.description || '';
@@ -713,6 +732,7 @@
                 organizer: document.getElementById('event-organizer-input').value,
                 type: document.getElementById('event-type-input').value,
                 date: document.getElementById('event-date-input').value,
+                eventMonth: document.getElementById('event-month-input').value,
                 prepMonth: document.getElementById('event-prepmonth-input').value,
                 location: document.getElementById('event-location-input').value.trim(),
                 description: document.getElementById('event-desc-input').value.trim(),
@@ -736,11 +756,11 @@
             let html = `<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">`;
             MONTHS.forEach(m => {
                 const monthEvents = AppState.events.filter(e => {
-                    const evtMonth = e.date ? e.date.split('-')[1] : '09';
+                    const evtMonth = e.date ? e.date.split('-')[1] : (e.eventMonth || '09');
                     return evtMonth === m.id;
                 });
                 const prepEvents = AppState.events.filter(e => {
-                    const evtMonth = e.date ? e.date.split('-')[1] : '09';
+                    const evtMonth = e.date ? e.date.split('-')[1] : (e.eventMonth || '09');
                     const prepMonth = e.prepMonth || '09';
                     const startIdx = MONTHS.findIndex(item => item.id === prepMonth);
                     const endIdx = MONTHS.findIndex(item => item.id === evtMonth);
@@ -760,7 +780,7 @@
                                     <div class="bg-white/90 backdrop-blur-xs p-2.5 rounded-xl border border-white/60 shadow-2xs space-y-1">
                                         <div class="flex items-center justify-between">
                                             <span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-200 flex items-center gap-1">
-                                                <i class="fa-solid fa-flag text-[8px] text-rose-400"></i> ${evt.date ? evt.date.split('-').reverse().join('/') : 'Jour J'}
+                                                <i class="fa-solid fa-flag text-[8px] text-rose-400"></i> ${evt.date ? evt.date.split('-').reverse().join('/') : (MONTHS.find(mon => mon.id === evt.eventMonth)?.short || 'Courant du mois')}
                                             </span>
                                             <span class="text-[9px] font-bold uppercase text-slate-500">${evt.organizer || 'APEL'}</span>
                                         </div>
@@ -803,6 +823,9 @@
 
             container.innerHTML = AppState.events.map(evt => {
                 const missions = evt.missions || [];
+                const monthObj = MONTHS.find(m => m.id === evt.eventMonth);
+                const displayDate = evt.date ? evt.date.split('-').reverse().join('/') : (monthObj ? `Mois de ${monthObj.short}` : 'Date non définie');
+
                 return `
                     <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow transition-all flex flex-col justify-between">
                         <div>
@@ -819,7 +842,7 @@
                                 ` : ''}
                             </div>
                             <h3 class="font-bold text-slate-800 text-base mt-3">${evt.title}</h3>
-                            <p class="text-xs text-slate-500 mt-1"><i class="fa-solid fa-calendar text-spgreen mr-1"></i> ${evt.date || 'Date libre'} | <i class="fa-solid fa-location-dot text-spred ml-1"></i> ${evt.location || 'Lieu non spécifié'}</p>
+                            <p class="text-xs text-slate-500 mt-1"><i class="fa-solid fa-calendar text-spgreen mr-1"></i> ${displayDate} | <i class="fa-solid fa-location-dot text-spred ml-1"></i> ${evt.location || 'Lieu non spécifié'}</p>
                             <p class="text-xs text-slate-600 mt-2">${evt.description || ''}</p>
 
                             <div class="mt-4 pt-3 border-t border-slate-100 space-y-2">

@@ -22,27 +22,153 @@ export async function onRequestPost(context) {
 
         switch (action) {
             case 'get_data': {
+                // Récupération des événements
                 const { data: events, error: evErr } = await supabase.from('events').select('*');
                 if (evErr) console.error("Erreur lecture events:", evErr);
                 
+                // Récupération des utilisateurs
                 const { data: users, error: usErr } = await supabase.from('users').select('*');
                 if (usErr) console.error("Erreur lecture users:", usErr);
 
+                // Récupération des missions de la table dédiée
+                const { data: missions, error: missErr } = await supabase.from('missions').select('*');
+                if (missErr) console.error("Erreur lecture missions:", missErr);
+
+                // Récupération des inscriptions de la table dédiée
                 const { data: registrations, error: regErr } = await supabase.from('registrations').select('*');
                 if (regErr) console.error("Erreur lecture registrations:", regErr);
 
-                // Associer les inscriptions de la table dédiée aux missions respectives
+                // Reconstruction des données imbriquées pour l'application
                 const formattedEvents = (events || []).map(evt => {
-                    const missions = (evt.missions || []).map(m => {
-                        const mVolunteers = (registrations || [])
-                            .filter(r => r.event_id === String(evt.id) && r.mission_id === String(m.id))
-                            .map(r => ({ email: r.user_email, name: r.user_name }));
-                        return { ...m, volunteers: mVolunteers };
-                    });
-                    return { ...evt, missions };
+                    const evtMissions = (missions || [])
+                        .filter(m => String(m.event_id) === String(evt.id))
+                        .map(m => {
+                            const volunteers = (registrations || [])
+                                .filter(r => String(r.mission_id) === String(m.id))
+                                .map(r => ({ email: r.user_email, name: r.user_name }));
+
+                            return {
+                                id: m.id,
+                                title: m.title,
+                                type: m.type,
+                                details: m.details,
+                                estimatedHours: m.estimated_hours,
+                                maxVolunteers: m.max_volunteers,
+                                volunteers: volunteers
+                            };
+                        });
+
+                    return {
+                        id: evt.id,
+                        title: evt.title,
+                        organizer: evt.organizer,
+                        type: evt.type,
+                        date: evt.date,
+                        prepMonth: evt.prep_month || evt.prepMonth,
+                        location: evt.location,
+                        description: evt.description,
+                        missions: evtMissions
+                    };
                 });
                 
                 result = { events: formattedEvents, users: users || [] };
+                break;
+            }
+
+            case 'save_event': {
+                const { event } = payload;
+                
+                // 1. Sauvegarder ou mettre à jour l'événement (sans les missions dans la table events)
+                const eventPayload = {
+                    id: String(event.id),
+                    title: event.title,
+                    organizer: event.organizer,
+                    type: event.type,
+                    date: event.date,
+                    prep_month: event.prepMonth,
+                    location: event.location,
+                    description: event.description
+                };
+
+                const { error: evtErr } = await supabase.from('events').upsert(eventPayload);
+                if (evtErr) throw new Error("Erreur enregistrement événement: " + evtErr.message);
+
+                // 2. Gestion des missions dans la table dédiée 'missions'
+                if (Array.isArray(event.missions)) {
+                    const missionIdsToKeep = event.missions.map(m => String(m.id));
+
+                    // Supprimer les missions qui n'existent plus pour cet événement
+                    if (missionIdsToKeep.length > 0) {
+                        const { data: existingMissions } = await supabase
+                            .from('missions')
+                            .select('id')
+                            .eq('event_id', String(event.id));
+
+                        const toDelete = (existingMissions || [])
+                            .filter(m => !missionIdsToKeep.includes(m.id))
+                            .map(m => m.id);
+
+                        if (toDelete.length > 0) {
+                            await supabase.from('registrations').delete().in('mission_id', toDelete);
+                            await supabase.from('missions').delete().in('id', toDelete);
+                        }
+                    } else {
+                        // Si aucune mission n'est fournie, tout supprimer pour cet événement
+                        const { data: existingMissions } = await supabase
+                            .from('missions')
+                            .select('id')
+                            .eq('event_id', String(event.id));
+                        
+                        const toDelete = (existingMissions || []).map(m => m.id);
+                        if (toDelete.length > 0) {
+                            await supabase.from('registrations').delete().in('mission_id', toDelete);
+                            await supabase.from('missions').delete().eq('event_id', String(event.id));
+                        }
+                    }
+
+                    // Insérer / Mettre à jour les missions
+                    for (const m of event.missions) {
+                        const missionPayload = {
+                            id: String(m.id),
+                            event_id: String(event.id),
+                            title: m.title,
+                            type: m.type || 'precise',
+                            details: m.details,
+                            estimated_hours: parseFloat(m.estimatedHours || 2),
+                            max_volunteers: parseInt(m.maxVolunteers || 2)
+                        };
+
+                        const { error: missErr } = await supabase.from('missions').upsert(missionPayload);
+                        if (missErr) throw new Error("Erreur enregistrement mission: " + missErr.message);
+                    }
+                }
+
+                break;
+            }
+
+            case 'delete_event': {
+                const eventId = String(payload.eventId);
+
+                // 1. Récupérer les ids des missions associées
+                const { data: eventMissions } = await supabase
+                    .from('missions')
+                    .select('id')
+                    .eq('event_id', eventId);
+
+                const missionIds = (eventMissions || []).map(m => m.id);
+
+                // 2. Supprimer les inscriptions associées aux missions
+                if (missionIds.length > 0) {
+                    await supabase.from('registrations').delete().in('mission_id', missionIds);
+                }
+
+                // 3. Supprimer les missions
+                await supabase.from('missions').delete().eq('event_id', eventId);
+
+                // 4. Supprimer l'événement
+                const { error } = await supabase.from('events').delete().eq('id', eventId);
+                if (error) throw new Error("Erreur suppression événement: " + error.message);
+
                 break;
             }
 
@@ -54,13 +180,11 @@ export async function onRequestPost(context) {
                 const { data: existing } = await supabase
                     .from('registrations')
                     .select('id')
-                    .eq('event_id', String(eventId))
                     .eq('mission_id', String(missionId))
                     .eq('user_email', cleanEmail)
                     .maybeSingle();
 
                 if (existing) {
-                    // Supprimer l'inscription
                     const { error } = await supabase
                         .from('registrations')
                         .delete()
@@ -68,7 +192,6 @@ export async function onRequestPost(context) {
                     if (error) throw new Error("Erreur annulation inscription: " + error.message);
                     result = { status: 'success', action: 'removed' };
                 } else {
-                    // Créer l'inscription
                     const { error } = await supabase
                         .from('registrations')
                         .insert([{
@@ -80,28 +203,6 @@ export async function onRequestPost(context) {
                     if (error) throw new Error("Erreur validation inscription: " + error.message);
                     result = { status: 'success', action: 'added' };
                 }
-                break;
-            }
-
-            case 'save_event': {
-                // Nettoyer les missions des bénévoles avant stockage dans la colonne jsonb si elle existe
-                const cleanEvent = { ...payload.event };
-                if (cleanEvent.missions) {
-                    cleanEvent.missions = cleanEvent.missions.map(m => {
-                        const { volunteers, ...rest } = m;
-                        return rest;
-                    });
-                }
-                const { error } = await supabase.from('events').upsert(cleanEvent);
-                if (error) throw new Error("Erreur save_event: " + error.message);
-                break;
-            }
-
-            case 'delete_event': {
-                // Supprimer les inscriptions associées puis l'événement
-                await supabase.from('registrations').delete().eq('event_id', String(payload.eventId));
-                const { error } = await supabase.from('events').delete().eq('id', payload.eventId);
-                if (error) throw new Error("Erreur delete_event: " + error.message);
                 break;
             }
 
